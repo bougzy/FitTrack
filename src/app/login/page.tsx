@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
 import { Eye, EyeOff, Zap } from 'lucide-react';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/dashboard';
@@ -82,7 +82,6 @@ export default function LoginPage() {
       </div>
 
       <div className="flex-1 flex flex-col justify-center px-6 py-12 relative z-10">
-        {/* Invite banner — shows when coming from an invite link */}
         {redirect.startsWith('/join/') && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -230,10 +229,7 @@ export default function LoginPage() {
 
             <button
               type="button"
-              onClick={() => {
-                setForgotMode(false);
-                setForgotStep(1);
-              }}
+              onClick={() => { setForgotMode(false); setForgotStep(1); }}
               className="w-full text-dark-400 text-sm"
             >
               ← Back to login
@@ -242,5 +238,17 @@ export default function LoginPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-dark-950 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-brand-500/30 border-t-brand-500 rounded-full animate-spin" />
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

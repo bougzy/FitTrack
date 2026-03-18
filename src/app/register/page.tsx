@@ -1,6 +1,6 @@
-'use client';
+// 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
@@ -8,26 +8,17 @@ import toast from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
 import { Eye, EyeOff, UserPlus } from 'lucide-react';
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const setAuth = useAuthStore((s) => s.setAuth);
-
-  // Read redirect from URL param OR from sessionStorage (set by join page)
   const redirectParam = searchParams.get('redirect') || '';
+  const setAuth = useAuthStore((s) => s.setAuth);
   const [redirect, setRedirect] = useState(redirectParam || '/dashboard');
-
-  const [form, setForm] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirm: '',
-  });
+  const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Check sessionStorage for a pending join code
     const pending = sessionStorage.getItem('pendingJoinCode');
     if (pending) {
       setRedirect(`/join/${pending}`);
@@ -58,14 +49,9 @@ export default function RegisterPage() {
       });
       const data = await res.json();
       if (!data.success) return toast.error(data.error);
-
       setAuth(data.data.user, data.data.token);
       toast.success("Account created! Let's get moving 🔥");
-
-      // Clear the pending join code from sessionStorage
       sessionStorage.removeItem('pendingJoinCode');
-
-      // Redirect back to the join page or dashboard
       router.replace(redirect);
     } catch {
       toast.error('Connection error. Are you online?');
@@ -78,10 +64,8 @@ export default function RegisterPage() {
 
   const passwordStrength = (p: string) => {
     if (p.length === 0) return null;
-    if (p.length < 6)
-      return { label: 'Too short', color: 'bg-red-500', width: '25%' };
-    if (p.length < 8)
-      return { label: 'Weak', color: 'bg-orange-500', width: '50%' };
+    if (p.length < 6) return { label: 'Too short', color: 'bg-red-500', width: '25%' };
+    if (p.length < 8) return { label: 'Weak', color: 'bg-orange-500', width: '50%' };
     if (!/[0-9]/.test(p) || !/[A-Z]/.test(p))
       return { label: 'Fair', color: 'bg-yellow-500', width: '75%' };
     return { label: 'Strong', color: 'bg-green-500', width: '100%' };
@@ -98,7 +82,6 @@ export default function RegisterPage() {
       </div>
 
       <div className="flex-1 flex flex-col justify-center px-6 py-12 relative z-10">
-        {/* Invite banner */}
         {isInviteFlow && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
@@ -106,9 +89,7 @@ export default function RegisterPage() {
             className="mb-6 p-4 bg-brand-500/15 border border-brand-500/30 rounded-2xl text-center"
           >
             <p className="text-2xl mb-1">👥</p>
-            <p className="font-semibold text-brand-300 text-sm">
-              You have a group invite!
-            </p>
+            <p className="font-semibold text-brand-300 text-sm">You have a group invite!</p>
             <p className="text-dark-400 text-xs mt-1">
               Create a free account to join the group
             </p>
@@ -123,9 +104,7 @@ export default function RegisterPage() {
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-3xl bg-gradient-to-br from-brand-400 to-brand-600 mb-4 brand-glow">
             <span className="text-4xl">💪</span>
           </div>
-          <h1 className="font-display text-3xl font-bold text-dark-50">
-            Join FitTrack
-          </h1>
+          <h1 className="font-display text-3xl font-bold text-dark-50">Join FitTrack</h1>
           <p className="text-dark-400 mt-1">Build accountability. Build habits.</p>
         </motion.div>
 
@@ -137,31 +116,15 @@ export default function RegisterPage() {
           className="space-y-4"
         >
           {[
-            {
-              key: 'name',
-              label: 'Full Name',
-              type: 'text',
-              placeholder: 'John Doe',
-              autocomplete: 'name',
-            },
-            {
-              key: 'email',
-              label: 'Email',
-              type: 'email',
-              placeholder: 'you@example.com',
-              autocomplete: 'email',
-            },
+            { key: 'name', label: 'Full Name', type: 'text', placeholder: 'John Doe', autocomplete: 'name' },
+            { key: 'email', label: 'Email', type: 'email', placeholder: 'you@example.com', autocomplete: 'email' },
           ].map((field) => (
             <div key={field.key}>
-              <label className="block text-sm font-medium text-dark-300 mb-2">
-                {field.label}
-              </label>
+              <label className="block text-sm font-medium text-dark-300 mb-2">{field.label}</label>
               <input
                 type={field.type}
                 value={form[field.key as keyof typeof form]}
-                onChange={(e) =>
-                  setForm({ ...form, [field.key]: e.target.value })
-                }
+                onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
                 placeholder={field.placeholder}
                 autoComplete={field.autocomplete}
                 className="w-full bg-dark-800 border border-dark-600 rounded-xl px-4 py-3.5 text-dark-50 placeholder-dark-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-colors"
@@ -170,9 +133,7 @@ export default function RegisterPage() {
           ))}
 
           <div>
-            <label className="block text-sm font-medium text-dark-300 mb-2">
-              Password
-            </label>
+            <label className="block text-sm font-medium text-dark-300 mb-2">Password</label>
             <div className="relative">
               <input
                 type={showPassword ? 'text' : 'password'}
@@ -193,10 +154,7 @@ export default function RegisterPage() {
             {strength && (
               <div className="mt-2">
                 <div className="h-1 bg-dark-700 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full ${strength.color} transition-all`}
-                    style={{ width: strength.width }}
-                  />
+                  <div className={`h-full ${strength.color} transition-all`} style={{ width: strength.width }} />
                 </div>
                 <p className="text-xs text-dark-400 mt-1">{strength.label}</p>
               </div>
@@ -204,9 +162,7 @@ export default function RegisterPage() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-dark-300 mb-2">
-              Confirm Password
-            </label>
+            <label className="block text-sm font-medium text-dark-300 mb-2">Confirm Password</label>
             <input
               type="password"
               value={form.confirm}
@@ -248,5 +204,17 @@ export default function RegisterPage() {
         </motion.form>
       </div>
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-dark-950 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-brand-500/30 border-t-brand-500 rounded-full animate-spin" />
+      </div>
+    }>
+      <RegisterForm />
+    </Suspense>
   );
 }
