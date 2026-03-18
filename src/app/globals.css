@@ -1,0 +1,155 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'Syne', sans-serif;
+  --font-body: 'DM Sans', sans-serif;
+  --color-brand: #f97316;
+  --color-brand-dim: #c2410c;
+  --color-bg: #0a0a0a;
+  --color-surface: #111111;
+  --color-surface-2: #1a1a1a;
+  --color-border: #2a2a2a;
+  --color-text: #f8f8f8;
+  --color-text-dim: #a8a8a8;
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-body);
+  min-height: 100dvh;
+  overscroll-behavior: none;
+}
+
+/* Prevent pull-to-refresh on mobile */
+html, body {
+  overscroll-behavior-y: none;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: var(--color-surface); }
+::-webkit-scrollbar-thumb { background: #3d3d3d; border-radius: 2px; }
+::-webkit-scrollbar-thumb:hover { background: #525252; }
+
+/* Custom focus ring */
+:focus-visible {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Safe area insets for notched phones */
+.safe-top { padding-top: env(safe-area-inset-top); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+.pb-safe { padding-bottom: max(env(safe-area-inset-bottom), 1rem); }
+
+/* Glass morphism */
+.glass {
+  background: rgba(255, 255, 255, 0.04);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Brand glow */
+.brand-glow {
+  box-shadow: 0 0 20px rgba(249, 115, 22, 0.4), 0 0 60px rgba(249, 115, 22, 0.1);
+}
+
+/* Verification score gradient */
+.score-low { color: #ef4444; }
+.score-mid { color: #f59e0b; }
+.score-high { color: #22c55e; }
+
+/* Exercise card hover */
+.exercise-card {
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.exercise-card:active {
+  transform: scale(0.97);
+}
+
+/* Bottom nav safe area */
+.bottom-nav {
+  padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
+}
+
+/* Progress ring */
+.progress-ring-track { stroke: #2a2a2a; }
+.progress-ring-fill {
+  stroke: var(--color-brand);
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.5s ease;
+  transform-origin: center;
+  transform: rotate(-90deg);
+}
+
+/* Shimmer loading */
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.skeleton {
+  background: linear-gradient(90deg, #1a1a1a 25%, #2a2a2a 50%, #1a1a1a 75%);
+  background-size: 200% auto;
+  animation: shimmer 1.5s linear infinite;
+  border-radius: 8px;
+}
+
+/* Pulse animation for active workout */
+@keyframes activePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.6); }
+  50% { box-shadow: 0 0 0 16px rgba(249, 115, 22, 0); }
+}
+.active-pulse {
+  animation: activePulse 2s ease-in-out infinite;
+}
+
+/* Verification badge */
+.verified-badge {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+}
+.unverified-badge {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+}
+
+/* Streak fire */
+.streak-fire {
+  text-shadow: 0 0 8px rgba(249, 115, 22, 0.8);
+}
+
+/* Page transitions */
+.page-enter {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile input styles */
+input, textarea, select {
+  font-size: 16px; /* Prevents iOS zoom on focus */
+}
+
+/* Haptic feedback visual */
+@keyframes hapticFlash {
+  0% { background: rgba(249, 115, 22, 0.3); }
+  100% { background: transparent; }
+}
+.haptic {
+  animation: hapticFlash 0.15s ease-out;
+}
