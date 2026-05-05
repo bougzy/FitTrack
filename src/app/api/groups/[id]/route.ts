@@ -137,12 +137,22 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }
 
     // Privacy check: non-members cannot see private groups
-    const isMember = group.members.some((m) => {
-      const uid = m.userId?.toString();
+    // After populate, m.userId is a populated User document — extract _id
+    const isMember = group.members.some((m: any) => {
+      const uid =
+        m.userId && typeof m.userId === 'object' && m.userId._id
+          ? m.userId._id.toString()
+          : m.userId?.toString();
       return uid === payload.userId;
     });
 
-    if (!isMember && group.privacy === 'private') {
+    const ownerId =
+      group.owner && typeof group.owner === 'object' && (group.owner as any)._id
+        ? (group.owner as any)._id.toString()
+        : group.owner?.toString();
+    const isOwner = ownerId === payload.userId;
+
+    if (!isMember && !isOwner && group.privacy === 'private') {
       return NextResponse.json({ success: false, error: 'Access denied' }, { status: 403 });
     }
 

@@ -3,11 +3,12 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
+import toast from 'react-hot-toast';
 import { useApi } from '@/hooks/useApi';
 import { useAuthStore } from '@/store/authStore';
 import { AppShell } from '@/components/ui/AppShell';
 import { Card, VerificationBadge, Skeleton, EmptyState } from '@/components/ui/index';
-import { Trophy, Users, Activity, Settings, Crown, Medal } from 'lucide-react';
+import { Trophy, Users, Activity, Crown, Medal, Send } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/exercises';
 import { format } from 'date-fns';
 
@@ -17,12 +18,18 @@ export default function GroupDetailPage() {
   const { request, loading } = useApi();
   const [data, setData] = useState<any>(null);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [posts, setPosts] = useState<any[]>([]);
   const [tab, setTab] = useState<'feed' | 'leaderboard' | 'members'>('feed');
   const [lbPeriod, setLbPeriod] = useState<'week' | 'month' | 'alltime'>('week');
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  const [postText, setPostText] = useState('');
+  const [posting, setPosting] = useState(false);
 
   useEffect(() => {
-    if (id) loadData();
+    if (id) {
+      loadData();
+      loadPosts();
+    }
   }, [id]);
 
   useEffect(() => {
@@ -36,6 +43,26 @@ export default function GroupDetailPage() {
     const invRes = await request<any>('/api/invitations');
     if (invRes?.success) {
       setPendingRequests(invRes.data.filter((inv: any) => inv.groupId?._id === id || inv.groupId === id));
+    }
+  };
+
+  const loadPosts = async () => {
+    const res = await request<any>(`/api/posts?groupId=${id}`, { showError: false });
+    if (res?.success) setPosts(res.data);
+  };
+
+  const submitPost = async () => {
+    if (!postText.trim()) return;
+    setPosting(true);
+    const res = await request<any>('/api/posts', {
+      method: 'POST',
+      body: { groupId: id, text: postText.trim() },
+    });
+    setPosting(false);
+    if (res?.success) {
+      setPostText('');
+      loadPosts();
+      toast.success('Posted to group!');
     }
   };
 
@@ -140,9 +167,49 @@ export default function GroupDetailPage() {
 
         {/* Feed */}
         {tab === 'feed' && (
-          <div className="space-y-2">
-            {recentSessions?.length === 0 ? (
-              <EmptyState icon="🏋️" title="No activity yet" description="Be the first to log a workout in this group!" />
+          <div className="space-y-3">
+            {/* Composer */}
+            <Card>
+              <div className="flex items-start gap-2">
+                <div className="w-8 h-8 bg-brand-500/20 rounded-lg flex items-center justify-center text-brand-400 font-bold flex-shrink-0">
+                  {(user?.name?.[0] || 'U').toUpperCase()}
+                </div>
+                <textarea
+                  value={postText}
+                  onChange={e => setPostText(e.target.value)}
+                  placeholder="Share progress with the group..."
+                  rows={2}
+                  className="flex-1 bg-dark-700 border border-dark-600 rounded-xl px-3 py-2 text-dark-50 placeholder-dark-500 text-sm focus:outline-none focus:border-brand-500 resize-none"
+                />
+                <button
+                  onClick={submitPost}
+                  disabled={posting || !postText.trim()}
+                  className="bg-brand-500 text-white p-2.5 rounded-xl disabled:opacity-40 active:scale-95 transition-transform flex-shrink-0"
+                >
+                  <Send size={16} />
+                </button>
+              </div>
+            </Card>
+
+            {/* Posts */}
+            {posts.map((p: any) => (
+              <Card key={p._id} className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 bg-brand-500/15 rounded-lg flex items-center justify-center text-brand-400 font-bold text-sm">
+                    {(p.userId?.name?.[0] || 'U').toUpperCase()}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-dark-100">{p.userId?.name || 'Unknown'}</p>
+                    <p className="text-[10px] text-dark-500">{format(new Date(p.createdAt), 'MMM d, h:mm a')}</p>
+                  </div>
+                </div>
+                {p.text && <p className="text-sm text-dark-200 whitespace-pre-wrap">{p.text}</p>}
+              </Card>
+            ))}
+
+            {/* Sessions feed */}
+            {recentSessions?.length === 0 && posts.length === 0 ? (
+              <EmptyState icon="🏋️" title="No activity yet" description="Be the first to log a workout or post an update!" />
             ) : (
               recentSessions?.map((s: any) => (
                 <Card key={s._id} className="flex items-start gap-3">

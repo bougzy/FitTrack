@@ -2,15 +2,15 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Dumbbell, Users, BarChart2, User } from 'lucide-react';
+import { Home, Dumbbell, Users, BarChart2, ClipboardList } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const NAV_ITEMS = [
   { href: '/dashboard', icon: Home, label: 'Home' },
   { href: '/workout', icon: Dumbbell, label: 'Workout' },
+  { href: '/programs', icon: ClipboardList, label: 'Programs' },
   { href: '/groups', icon: Users, label: 'Groups' },
   { href: '/analytics', icon: BarChart2, label: 'Stats' },
-  { href: '/profile', icon: User, label: 'Profile' },
 ];
 
 export function BottomNav() {

@@ -13,7 +13,7 @@ import { Card, ProgressRing, VerificationBadge } from '@/components/ui/index';
 import { EXERCISE_CONFIGS, getExercisesByCategory, formatDuration } from '@/lib/utils/exercises';
 import { computeVerificationScore } from '@/lib/utils/verification';
 import { generateAntiCheatPrompts } from '@/lib/utils/verification';
-import { Play, Pause, Square, ChevronRight, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Play, Pause, Square, ChevronRight, CheckCircle, AlertTriangle, Heart, Footprints } from 'lucide-react';
 import { ISensorSnapshot } from '@/types';
 
 type WorkoutPhase = 'select' | 'setup' | 'active' | 'complete';
@@ -58,7 +58,7 @@ export default function WorkoutPage() {
     if (navigator.vibrate) navigator.vibrate(30);
   }, [incrementRep]);
 
-  const { startTracking, stopTracking } = useSensors({
+  const { startTracking, stopTracking, heartRate, hrConnected, hrConnect, hrError, steps } = useSensors({
     onSnapshot: handleSnapshot,
     onRepDetected: handleRepDetected,
     exerciseType: selectedExercise,
@@ -331,6 +331,41 @@ export default function WorkoutPage() {
                   />
                 </div>
               </div>
+
+              {/* Live sensor metrics */}
+              <div className="w-full grid grid-cols-3 gap-2">
+                <button
+                  onClick={!hrConnected ? hrConnect : undefined}
+                  disabled={hrConnected}
+                  className="bg-dark-800 border border-dark-700 rounded-xl p-2.5 text-center active:scale-95 transition-transform disabled:active:scale-100"
+                >
+                  <div className="flex items-center justify-center gap-1 text-xs text-dark-500">
+                    <Heart size={14} className="text-red-400" /> HR
+                  </div>
+                  <p className="font-display font-bold text-dark-50 text-lg leading-tight mt-0.5">
+                    {heartRate ?? '—'}
+                  </p>
+                  <p className="text-[10px] text-dark-500">{hrConnected ? 'bpm' : 'Tap to pair'}</p>
+                </button>
+                <div className="bg-dark-800 border border-dark-700 rounded-xl p-2.5 text-center">
+                  <div className="flex items-center justify-center gap-1 text-xs text-dark-500">
+                    <Footprints size={14} className="text-blue-400" /> Steps
+                  </div>
+                  <p className="font-display font-bold text-dark-50 text-lg leading-tight mt-0.5">{steps}</p>
+                  <p className="text-[10px] text-dark-500">detected</p>
+                </div>
+                <div className="bg-dark-800 border border-dark-700 rounded-xl p-2.5 text-center">
+                  <div className="flex items-center justify-center gap-1 text-xs text-dark-500">
+                    🔥 Cal
+                  </div>
+                  <p className="font-display font-bold text-dark-50 text-lg leading-tight mt-0.5">
+                    {Math.round((config?.caloriesPerRep || 0) * (session.reps || 0) +
+                      (config?.caloriesPerMinute || 0) * (seconds / 60))}
+                  </p>
+                  <p className="text-[10px] text-dark-500">kcal</p>
+                </div>
+              </div>
+              {hrError && <p className="text-[11px] text-red-400 text-center -mt-2">{hrError}</p>}
 
               {/* Manual rep count (for when sensors aren't ideal) */}
               {config?.trackingType === 'reps' && (

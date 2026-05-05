@@ -4,13 +4,45 @@ const withPWA = require('next-pwa')({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
+  buildExcludes: [/middleware-manifest\.json$/],
   runtimeCaching: [
+    {
+      urlPattern: /^\/api\/auth\/.*/i,
+      handler: 'NetworkOnly',
+    },
+    {
+      urlPattern: /^\/api\/.*/i,
+      handler: 'NetworkFirst',
+      method: 'GET',
+      options: {
+        cacheName: 'apiCache',
+        expiration: { maxEntries: 100, maxAgeSeconds: 60 * 5 },
+        networkTimeoutSeconds: 5,
+      },
+    },
+    {
+      urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'imageCache',
+        expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 * 30 },
+      },
+    },
+    {
+      urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'googleFontsCache',
+        expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
+      },
+    },
     {
       urlPattern: /^https?.*/,
       handler: 'NetworkFirst',
       options: {
-        cacheName: 'offlineCache',
-        expiration: { maxEntries: 200 },
+        cacheName: 'pageCache',
+        expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 },
+        networkTimeoutSeconds: 5,
       },
     },
   ],
