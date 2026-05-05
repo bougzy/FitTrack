@@ -11,6 +11,7 @@ import { Card, VerificationBadge, Skeleton, EmptyState } from '@/components/ui/i
 import { Trophy, Users, Activity, Crown, Medal, Send } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/exercises';
 import { format } from 'date-fns';
+import { WhatsAppShare } from '@/components/ui/WhatsAppShare';
 
 export default function GroupDetailPage() {
   const { id } = useParams() as { id: string };
@@ -192,20 +193,32 @@ export default function GroupDetailPage() {
             </Card>
 
             {/* Posts */}
-            {posts.map((p: any) => (
-              <Card key={p._id} className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-brand-500/15 rounded-lg flex items-center justify-center text-brand-400 font-bold text-sm">
-                    {(p.userId?.name?.[0] || 'U').toUpperCase()}
+            {posts.map((p: any) => {
+              const shareText = `💪 ${p.userId?.name || 'Someone'} on FitTrack:\n\n${p.text || ''}\n\n— shared from group "${data?.group?.name || ''}"`;
+              return (
+                <Card key={p._id} className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 bg-brand-500/15 rounded-lg flex items-center justify-center text-brand-400 font-bold text-sm">
+                      {(p.userId?.name?.[0] || 'U').toUpperCase()}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-dark-100">{p.userId?.name || 'Unknown'}</p>
+                      <p className="text-[10px] text-dark-500">{format(new Date(p.createdAt), 'MMM d, h:mm a')}</p>
+                    </div>
+                    <WhatsAppShare
+                      title="Share Progress"
+                      text={shareText}
+                      trigger={
+                        <button type="button" className="text-[10px] px-2 py-1 rounded-md bg-green-500/15 text-green-400 font-semibold active:scale-95 transition-transform">
+                          📲 Share
+                        </button>
+                      }
+                    />
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-dark-100">{p.userId?.name || 'Unknown'}</p>
-                    <p className="text-[10px] text-dark-500">{format(new Date(p.createdAt), 'MMM d, h:mm a')}</p>
-                  </div>
-                </div>
-                {p.text && <p className="text-sm text-dark-200 whitespace-pre-wrap">{p.text}</p>}
-              </Card>
-            ))}
+                  {p.text && <p className="text-sm text-dark-200 whitespace-pre-wrap">{p.text}</p>}
+                </Card>
+              );
+            })}
 
             {/* Sessions feed */}
             {recentSessions?.length === 0 && posts.length === 0 ? (

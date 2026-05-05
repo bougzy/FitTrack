@@ -8,6 +8,7 @@ import { useApi } from '@/hooks/useApi';
 import { AppShell } from '@/components/ui/AppShell';
 import { Card, EmptyState, Skeleton } from '@/components/ui/index';
 import { Plus, Search, Globe, Lock, ChevronRight, Copy, Check, Link } from 'lucide-react';
+import { WhatsAppShare } from '@/components/ui/WhatsAppShare';
 
 export default function GroupsPage() {
   const router = useRouter();
@@ -343,16 +344,19 @@ export default function GroupsPage() {
                   <InviteCopyBox value={getInviteLink(createdGroup.inviteCode)} label="Link" />
                 </div>
 
-                {/* Share to WhatsApp */}
-                <button
-                  onClick={() => {
-                    const text = `Join my fitness group "${createdGroup.name}" on FitTrack!\n\nUse invite code: *${createdGroup.inviteCode}*\nOr click this link: ${getInviteLink(createdGroup.inviteCode)}`;
-                    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                  }}
-                  className="w-full py-3.5 bg-green-600/20 border border-green-500/30 rounded-xl font-semibold text-green-400 flex items-center justify-center gap-2 active:scale-95 transition-transform"
-                >
-                  📲 Share Invite on WhatsApp
-                </button>
+                {/* Share to WhatsApp — picker chooses regular or Business */}
+                <WhatsAppShare
+                  title="Share Group Invite"
+                  text={`Join my fitness group "${createdGroup.name}" on FitTrack!\n\nUse invite code: *${createdGroup.inviteCode}*\nOr click this link: ${getInviteLink(createdGroup.inviteCode)}`}
+                  trigger={
+                    <button
+                      type="button"
+                      className="w-full py-3.5 bg-green-600/20 border border-green-500/30 rounded-xl font-semibold text-green-400 flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                    >
+                      📲 Share Invite on WhatsApp
+                    </button>
+                  }
+                />
 
                 {/* Go to group */}
                 <button

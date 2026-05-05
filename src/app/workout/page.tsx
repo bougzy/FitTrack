@@ -15,6 +15,7 @@ import { computeVerificationScore } from '@/lib/utils/verification';
 import { generateAntiCheatPrompts } from '@/lib/utils/verification';
 import { Play, Pause, Square, ChevronRight, CheckCircle, AlertTriangle, Heart, Footprints } from 'lucide-react';
 import { ISensorSnapshot } from '@/types';
+import { WhatsAppShare } from '@/components/ui/WhatsAppShare';
 
 type WorkoutPhase = 'select' | 'setup' | 'active' | 'complete';
 
@@ -470,24 +471,39 @@ export default function WorkoutPage() {
 
 function ShareDailyReport() {
   const { request, loading } = useApi();
-  const [url, setUrl] = useState('');
+  const [text, setText] = useState('');
 
   const fetchReport = async () => {
+    if (text) return text; // already loaded
     const res = await request<any>('/api/exercises/report');
     if (res?.success) {
-      setUrl(res.data.whatsappUrl);
-      window.open(res.data.whatsappUrl, '_blank');
+      setText(res.data.whatsappText);
+      return res.data.whatsappText as string;
     }
+    return '';
   };
 
+  // Pre-fetch on mount so the picker has text ready
+  useEffect(() => { fetchReport(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, []);
+
   return (
-    <button
-      onClick={fetchReport}
-      disabled={loading}
-      className="w-full py-3.5 bg-green-600/20 border border-green-500/30 rounded-xl font-semibold text-green-400 flex items-center justify-center gap-2 active:scale-95 transition-transform"
-    >
-      {loading ? <div className="w-4 h-4 border-2 border-green-400/30 border-t-green-400 rounded-full animate-spin" /> : '📲'}
-      Share to WhatsApp
-    </button>
+    <WhatsAppShare
+      title="Share Daily Report"
+      text={text}
+      trigger={
+        <button
+          type="button"
+          disabled={loading || !text}
+          className="w-full py-3.5 bg-green-600/20 border border-green-500/30 rounded-xl font-semibold text-green-400 flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50"
+        >
+          {loading && !text ? (
+            <div className="w-4 h-4 border-2 border-green-400/30 border-t-green-400 rounded-full animate-spin" />
+          ) : (
+            '📲'
+          )}
+          Share to WhatsApp
+        </button>
+      }
+    />
   );
 }

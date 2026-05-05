@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { formatDuration } from '@/lib/utils/exercises';
 import { Share2 } from 'lucide-react';
+import { WhatsAppShare } from '@/components/ui/WhatsAppShare';
 
 const COLORS = ['#f97316', '#fb923c', '#fdba74', '#fed7aa', '#ffedd5', '#c2410c'];
 
@@ -18,21 +19,19 @@ export default function AnalyticsPage() {
   const { request, loading } = useApi();
   const [data, setData] = useState<any>(null);
   const [period, setPeriod] = useState(7);
-  const [reportData, setReportData] = useState<any>(null);
+  const [reportText, setReportText] = useState('');
 
   useEffect(() => { loadAnalytics(); }, [period]);
+  useEffect(() => { loadReport(); }, []);
 
   const loadAnalytics = async () => {
     const res = await request<any>(`/api/exercises/analytics?period=${period}`);
     if (res?.success) setData(res.data);
   };
 
-  const shareReport = async () => {
+  const loadReport = async () => {
     const res = await request<any>('/api/exercises/report');
-    if (res?.success) {
-      setReportData(res.data);
-      window.open(res.data.whatsappUrl, '_blank');
-    }
+    if (res?.success) setReportText(res.data.whatsappText);
   };
 
   const customTooltipStyle = {
@@ -47,9 +46,15 @@ export default function AnalyticsPage() {
     <AppShell
       title="Analytics"
       rightAction={
-        <button onClick={shareReport} className="p-2 text-dark-400 hover:text-brand-400">
-          <Share2 size={20} />
-        </button>
+        <WhatsAppShare
+          title="Share Analytics Report"
+          text={reportText}
+          trigger={
+            <button type="button" className="p-2 text-dark-400 hover:text-brand-400">
+              <Share2 size={20} />
+            </button>
+          }
+        />
       }
     >
       <div className="px-4 pt-4 space-y-5 pb-4">
@@ -194,12 +199,19 @@ export default function AnalyticsPage() {
             </motion.div>
 
             {/* WhatsApp share */}
-            <button
-              onClick={shareReport}
-              className="w-full py-3.5 bg-green-600/20 border border-green-500/30 rounded-xl font-semibold text-green-400 flex items-center justify-center gap-2 active:scale-95 transition-transform"
-            >
-              📲 Share Daily Report to WhatsApp
-            </button>
+            <WhatsAppShare
+              title="Share Daily Report"
+              text={reportText}
+              trigger={
+                <button
+                  type="button"
+                  disabled={!reportText}
+                  className="w-full py-3.5 bg-green-600/20 border border-green-500/30 rounded-xl font-semibold text-green-400 flex items-center justify-center gap-2 active:scale-95 transition-transform disabled:opacity-50"
+                >
+                  📲 Share Daily Report to WhatsApp
+                </button>
+              }
+            />
           </>
         )}
       </div>
