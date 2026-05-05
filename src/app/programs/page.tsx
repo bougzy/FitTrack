@@ -1,14 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useApi } from '@/hooks/useApi';
+import { useAuthStore } from '@/store/authStore';
 import { AppShell } from '@/components/ui/AppShell';
 import { Card, EmptyState, Skeleton } from '@/components/ui/index';
-import { Plus, Play, Trash2, Clock, Dumbbell, Globe, Lock, X } from 'lucide-react';
+import { AIRecommendCard } from '@/components/ui/AICoach';
+import { Plus, Play, Trash2, Clock, Dumbbell, Globe, Lock, X, Sparkles } from 'lucide-react';
 import { EXERCISE_CONFIGS, getExercisesByCategory } from '@/lib/utils/exercises';
+import { recommendPrograms } from '@/lib/utils/aiCoach';
 
 interface ProgramExercise {
   exerciseType: string;
@@ -21,18 +24,29 @@ interface ProgramExercise {
 export default function ProgramsPage() {
   const router = useRouter();
   const { request, loading } = useApi();
-  const [tab, setTab] = useState<'mine' | 'shared'>('mine');
+  const { user } = useAuthStore();
+  const [tab, setTab] = useState<'mine' | 'shared' | 'ai'>('ai');
   const [programs, setPrograms] = useState<any[]>([]);
   const [showCreate, setShowCreate] = useState(false);
+  const [createPreset, setCreatePreset] = useState<any>(null);
 
   useEffect(() => {
-    loadData();
+    if (tab !== 'ai') loadData();
   }, [tab]);
 
   const loadData = async () => {
-    const res = await request<any>(`/api/programs?type=${tab}`);
+    const res = await request<any>(`/api/programs?type=${tab === 'shared' ? 'shared' : 'mine'}`);
     if (res?.success) setPrograms(res.data);
   };
+
+  // AI-recommended programs based on user state — memoized so they don't reshuffle on each render
+  const recommendations = useMemo(() => {
+    return recommendPrograms({
+      level: user?.level || 1,
+      streak: user?.streak || 0,
+      totalWorkouts: user?.totalWorkouts || 0,
+    }, 4);
+  }, [user?.level, user?.streak, user?.totalWorkouts]);
 
   const handleStart = async (programId: string) => {
     await request(`/api/programs/${programId}`, {
@@ -41,6 +55,17 @@ export default function ProgramsPage() {
       showError: false,
     });
     router.push(`/programs/${programId}`);
+  };
+
+  const handleCreateFromTemplate = (tpl: any) => {
+    setCreatePreset({
+      name: tpl.name,
+      description: tpl.description,
+      difficulty: tpl.difficulty,
+      shared: false,
+      exercises: tpl.exercises,
+    });
+    setShowCreate(true);
   };
 
   const handleDelete = async (programId: string) => {
@@ -65,21 +90,63 @@ export default function ProgramsPage() {
       }
     >
       <div className="px-4 pt-4 space-y-4 pb-6">
-        <div className="flex gap-2 bg-dark-800 p-1 rounded-xl">
-          {(['mine', 'shared'] as const).map(t => (
-            <button
+        <div className="flex gap-1.5 glass-strong p-1 rounded-2xl">
+          {(['ai', 'mine', 'shared'] as const).map(t => (
+            <motion.button
               key={t}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setTab(t)}
-              className={`flex-1 py-2.5 rounded-lg font-display font-semibold text-sm transition-all ${
-                t === tab ? 'bg-brand-500 text-white' : 'text-dark-400'
+              className={`flex-1 py-2.5 rounded-xl font-display font-semibold text-xs sm:text-sm transition-all flex items-center justify-center gap-1.5 ${
+                t === tab
+                  ? t === 'ai'
+                    ? 'bg-gradient-to-r from-purple-500 to-indigo-600 text-white shadow-ai-glow'
+                    : 'bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-brand-glow'
+                  : 'text-dark-400'
               }`}
             >
-              {t === 'mine' ? 'My Programs' : 'Discover'}
-            </button>
+              {t === 'ai' && <Sparkles size={12} />}
+              {t === 'ai' ? 'AI Picks' : t === 'mine' ? 'Mine' : 'Discover'}
+            </motion.button>
           ))}
         </div>
 
-        {loading && programs.length === 0 ? (
+        {tab === 'ai' && (
+          <div className="space-y-3 stagger">
+            <div className="relative overflow-hidden glass-strong rounded-3xl p-5 bg-mesh-ai">
+              <div className="absolute -top-12 -right-8 w-40 h-40 bg-purple-500/20 rounded-full blur-3xl pointer-events-none" />
+              <div className="relative">
+                <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-widest text-purple-300 font-semibold">
+                  <Sparkles size={11} />
+                  Powered by AI Coach
+                </div>
+                <h2 className="font-display text-xl font-extrabold gradient-text mt-1">Personalized for you</h2>
+                <p className="text-xs text-dark-300 mt-1 leading-snug">
+                  Picked from {recommendations.length} program templates based on your level{user?.level ? ` ${user.level}` : ''}, streak{user?.streak ? ` of ${user.streak}` : ''} and recent activity.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {recommendations.map((tpl) => (
+                <AIRecommendCard
+                  key={tpl.name}
+                  name={tpl.name}
+                  description={tpl.description}
+                  difficulty={tpl.difficulty}
+                  estimatedMinutes={tpl.estimatedMinutes}
+                  reason={tpl.reason}
+                  onClick={() => handleCreateFromTemplate(tpl)}
+                />
+              ))}
+            </div>
+
+            <p className="text-[11px] text-center text-dark-500 pt-1">
+              Tap a recommendation to save it as your own program, then start it any time.
+            </p>
+          </div>
+        )}
+
+        {tab !== 'ai' && (loading && programs.length === 0 ? (
           [0, 1, 2].map(i => <Skeleton key={i} className="h-28 rounded-2xl" />)
         ) : programs.length === 0 ? (
           <EmptyState
@@ -158,15 +225,17 @@ export default function ProgramsPage() {
               </div>
             </Card>
           ))
-        )}
+        ))}
       </div>
 
       <AnimatePresence>
         {showCreate && (
           <CreateProgramModal
-            onClose={() => setShowCreate(false)}
+            preset={createPreset}
+            onClose={() => { setShowCreate(false); setCreatePreset(null); }}
             onCreated={() => {
               setShowCreate(false);
+              setCreatePreset(null);
               setTab('mine');
               loadData();
             }}
@@ -177,17 +246,25 @@ export default function ProgramsPage() {
   );
 }
 
-function CreateProgramModal({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
+interface PresetData {
+  name: string;
+  description: string;
+  difficulty: 'beginner' | 'intermediate' | 'advanced';
+  shared: boolean;
+  exercises: ProgramExercise[];
+}
+
+function CreateProgramModal({ preset, onClose, onCreated }: { preset?: PresetData | null; onClose: () => void; onCreated: () => void }) {
   const { request } = useApi();
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
-    name: '',
-    description: '',
-    difficulty: 'beginner' as 'beginner' | 'intermediate' | 'advanced',
-    shared: false,
+    name: preset?.name || '',
+    description: preset?.description || '',
+    difficulty: (preset?.difficulty || 'beginner') as 'beginner' | 'intermediate' | 'advanced',
+    shared: preset?.shared || false,
   });
-  const [exercises, setExercises] = useState<ProgramExercise[]>([]);
+  const [exercises, setExercises] = useState<ProgramExercise[]>(preset?.exercises || []);
   const [picking, setPicking] = useState(false);
   const grouped = getExercisesByCategory();
 

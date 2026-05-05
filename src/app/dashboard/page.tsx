@@ -63,25 +63,35 @@ export default function DashboardPage() {
         </button>
       }
     >
-      <div className="px-4 pt-4 space-y-6 pb-4">
+      <div className="px-4 pt-4 space-y-5 pb-4 relative z-10">
         {/* Header */}
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
           <p className="text-dark-400 text-sm">{greeting()},</p>
-          <h1 className="font-display text-3xl font-bold text-dark-50">{user?.name?.split(' ')[0]} 👋</h1>
+          <h1 className="font-display text-3xl font-extrabold tracking-tight">
+            <span className="gradient-text">{user?.name?.split(' ')[0] || 'there'}</span>
+            <span className="text-dark-50"> 👋</span>
+          </h1>
         </motion.div>
 
-        {/* Streak + Level */}
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-          <Card className="bg-gradient-to-br from-dark-800 to-dark-900 border-dark-600">
-            <div className="flex items-center justify-between mb-3">
-              <StreakDisplay streak={user?.streak || 0} />
-              <div className="text-right">
-                <p className="text-xs text-dark-400">Best</p>
-                <p className="font-display font-bold text-dark-200">{user?.longestStreak || 0} days</p>
+        {/* Streak + Level — hero glass card */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+        >
+          <div className="relative overflow-hidden rounded-3xl glass-brand p-5 sheen">
+            <div className="absolute -top-16 -right-16 w-44 h-44 bg-brand-500/30 rounded-full blur-3xl pointer-events-none" />
+            <div className="relative">
+              <div className="flex items-center justify-between mb-3">
+                <StreakDisplay streak={user?.streak || 0} />
+                <div className="text-right">
+                  <p className="text-[10px] uppercase tracking-widest text-dark-400">Best</p>
+                  <p className="font-display font-bold text-dark-100">{user?.longestStreak || 0} days</p>
+                </div>
               </div>
+              <LevelBadge level={user?.level || 1} xp={user?.xp || 0} />
             </div>
-            <LevelBadge level={user?.level || 1} xp={user?.xp || 0} />
-          </Card>
+          </div>
         </motion.div>
 
         {/* Today Summary */}
@@ -130,11 +140,11 @@ export default function DashboardPage() {
               {[0,1,2,3].map(i => <Skeleton key={i} className="h-20 rounded-2xl" />)}
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3">
-              <StatCard label="Workouts" value={analytics?.totals?.workouts || 0} icon="🏋️" />
-              <StatCard label="Calories" value={`${analytics?.totals?.calories || 0}`} icon="🔥" sub="kcal burned" />
-              <StatCard label="Total Reps" value={analytics?.totals?.reps || 0} icon="💪" />
-              <StatCard label="Avg Score" value={`${analytics?.totals?.avgVerification || 0}%`} icon="✅" sub="verification" />
+            <div className="grid grid-cols-2 gap-3 stagger">
+              <StatCard label="Workouts" value={analytics?.totals?.workouts || 0} icon="🏋️" accent="brand" />
+              <StatCard label="Calories" value={`${analytics?.totals?.calories || 0}`} icon="🔥" sub="kcal burned" accent="purple" />
+              <StatCard label="Total Reps" value={analytics?.totals?.reps || 0} icon="💪" accent="blue" />
+              <StatCard label="Avg Score" value={`${analytics?.totals?.avgVerification || 0}%`} icon="✅" sub="verification" accent="green" />
             </div>
           )}
         </motion.div>
@@ -182,13 +192,18 @@ export default function DashboardPage() {
 
         {/* Start workout CTA */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-          <button
+          <motion.button
+            whileTap={{ scale: 0.96 }}
             onClick={() => router.push('/workout')}
-            className="w-full py-4 bg-gradient-to-r from-brand-500 to-brand-600 rounded-2xl font-display font-bold text-white text-lg flex items-center justify-center gap-2 brand-glow active:scale-95 transition-transform"
+            className="relative overflow-hidden w-full py-4 rounded-2xl font-display font-extrabold text-white text-lg flex items-center justify-center gap-2 shadow-brand-glow group"
+            style={{
+              background: 'linear-gradient(135deg, #fb923c 0%, #f97316 50%, #c2410c 100%)',
+            }}
           >
-            <Zap size={22} />
-            Start Workout
-          </button>
+            <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+            <Zap size={22} className="relative" />
+            <span className="relative tracking-wide">Start Workout</span>
+          </motion.button>
         </motion.div>
       </div>
 

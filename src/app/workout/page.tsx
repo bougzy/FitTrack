@@ -13,9 +13,11 @@ import { Card, ProgressRing, VerificationBadge } from '@/components/ui/index';
 import { EXERCISE_CONFIGS, getExercisesByCategory, formatDuration } from '@/lib/utils/exercises';
 import { computeVerificationScore } from '@/lib/utils/verification';
 import { generateAntiCheatPrompts } from '@/lib/utils/verification';
-import { Play, Pause, Square, ChevronRight, CheckCircle, AlertTriangle, Heart, Footprints } from 'lucide-react';
+import { Play, Pause, Square, ChevronRight, CheckCircle, AlertTriangle, Heart, Footprints, Sparkles } from 'lucide-react';
 import { ISensorSnapshot } from '@/types';
 import { WhatsAppShare } from '@/components/ui/WhatsAppShare';
+import { AICoachLive, AICoachSummary } from '@/components/ui/AICoach';
+import { topInsight, postWorkoutSummary, CoachInsight } from '@/lib/utils/aiCoach';
 
 type WorkoutPhase = 'select' | 'setup' | 'active' | 'complete';
 
@@ -32,8 +34,11 @@ export default function WorkoutPage() {
   const [result, setResult] = useState<any>(null);
   const [antiCheatVisible, setAntiCheatVisible] = useState(false);
   const [currentPrompt, setCurrentPrompt] = useState('');
+  const [aiInsight, setAiInsight] = useState<CoachInsight | null>(null);
+  const [aiSummary, setAiSummary] = useState<ReturnType<typeof postWorkoutSummary> | null>(null);
   const antiCheatTimerRef = useRef<NodeJS.Timeout>();
   const verificationIntervalRef = useRef<NodeJS.Timeout>();
+  const aiCoachIntervalRef = useRef<NodeJS.Timeout>();
   const snapshotsRef = useRef<ISensorSnapshot[]>([]);
 
   const isActive = session?.isActive || false;
@@ -89,6 +94,31 @@ export default function WorkoutPage() {
     return () => clearInterval(verificationIntervalRef.current);
   }, [isActive, seconds, selectedExercise, session, updateVerificationScore]);
 
+  // AI live coach — refresh top insight every 6 seconds
+  useEffect(() => {
+    if (!isActive || isPaused) {
+      clearInterval(aiCoachIntervalRef.current);
+      return;
+    }
+    const tick = () => {
+      if (!session) return;
+      const insight = topInsight({
+        exerciseType: selectedExercise,
+        reps: session.reps,
+        targetReps,
+        durationSeconds: seconds,
+        heartRate: heartRate ?? undefined,
+        steps,
+        verification: session.verificationScore,
+        recentSnapshots: snapshotsRef.current.slice(-60),
+      });
+      if (insight) setAiInsight(insight);
+    };
+    tick();
+    aiCoachIntervalRef.current = setInterval(tick, 6000);
+    return () => clearInterval(aiCoachIntervalRef.current);
+  }, [isActive, isPaused, session, seconds, selectedExercise, targetReps, heartRate, steps]);
+
   // Anti-cheat random prompts
   useEffect(() => {
     if (!isActive || isPaused) {
@@ -127,6 +157,7 @@ export default function WorkoutPage() {
     stopTracking();
     clearTimeout(antiCheatTimerRef.current);
     clearInterval(verificationIntervalRef.current);
+    clearInterval(aiCoachIntervalRef.current);
     stopSession();
 
     // Final verification
@@ -150,6 +181,20 @@ export default function WorkoutPage() {
     });
 
     if (res?.success) {
+      // Generate AI summary from final state
+      const summary = postWorkoutSummary({
+        exerciseType: selectedExercise,
+        reps: session?.reps || 0,
+        targetReps,
+        durationSeconds: seconds,
+        heartRate: heartRate ?? undefined,
+        steps,
+        verification: finalScore,
+        recentSnapshots: snapshotsRef.current,
+        calories: res.data?.caloriesBurned,
+        verified: res.data?.verified,
+      });
+      setAiSummary(summary);
       setResult(res.data);
       setPhase('complete');
       // Update local user stats
@@ -335,28 +380,29 @@ export default function WorkoutPage() {
 
               {/* Live sensor metrics */}
               <div className="w-full grid grid-cols-3 gap-2">
-                <button
+                <motion.button
+                  whileTap={!hrConnected ? { scale: 0.95 } : undefined}
                   onClick={!hrConnected ? hrConnect : undefined}
                   disabled={hrConnected}
-                  className="bg-dark-800 border border-dark-700 rounded-xl p-2.5 text-center active:scale-95 transition-transform disabled:active:scale-100"
+                  className="glass-card rounded-2xl p-2.5 text-center disabled:active:scale-100 relative overflow-hidden"
                 >
-                  <div className="flex items-center justify-center gap-1 text-xs text-dark-500">
-                    <Heart size={14} className="text-red-400" /> HR
+                  <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-wider text-dark-400 font-semibold">
+                    <Heart size={12} className={`text-red-400 ${heartRate ? 'heartbeat' : ''}`} /> HR
                   </div>
                   <p className="font-display font-bold text-dark-50 text-lg leading-tight mt-0.5">
                     {heartRate ?? '—'}
                   </p>
                   <p className="text-[10px] text-dark-500">{hrConnected ? 'bpm' : 'Tap to pair'}</p>
-                </button>
-                <div className="bg-dark-800 border border-dark-700 rounded-xl p-2.5 text-center">
-                  <div className="flex items-center justify-center gap-1 text-xs text-dark-500">
-                    <Footprints size={14} className="text-blue-400" /> Steps
+                </motion.button>
+                <div className="glass-card rounded-2xl p-2.5 text-center">
+                  <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-wider text-dark-400 font-semibold">
+                    <Footprints size={12} className="text-blue-400" /> Steps
                   </div>
                   <p className="font-display font-bold text-dark-50 text-lg leading-tight mt-0.5">{steps}</p>
                   <p className="text-[10px] text-dark-500">detected</p>
                 </div>
-                <div className="bg-dark-800 border border-dark-700 rounded-xl p-2.5 text-center">
-                  <div className="flex items-center justify-center gap-1 text-xs text-dark-500">
+                <div className="glass-card rounded-2xl p-2.5 text-center">
+                  <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-wider text-dark-400 font-semibold">
                     🔥 Cal
                   </div>
                   <p className="font-display font-bold text-dark-50 text-lg leading-tight mt-0.5">
@@ -380,6 +426,11 @@ export default function WorkoutPage() {
               )}
             </div>
 
+            {/* AI live coach */}
+            <div className="px-4 mb-2">
+              <AICoachLive insight={aiInsight} />
+            </div>
+
             {/* Anti-cheat prompt */}
             <AnimatePresence>
               {antiCheatVisible && (
@@ -387,7 +438,7 @@ export default function WorkoutPage() {
                   initial={{ opacity: 0, scale: 0.9, y: 20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.9 }}
-                  className="mx-4 mb-4 p-4 bg-yellow-500/20 border border-yellow-500/40 rounded-2xl flex gap-3 items-start"
+                  className="mx-4 mb-4 p-4 bg-yellow-500/20 border border-yellow-500/40 rounded-2xl flex gap-3 items-start backdrop-blur-md"
                 >
                   <AlertTriangle size={20} className="text-yellow-400 flex-shrink-0 mt-0.5" />
                   <div>
@@ -400,18 +451,21 @@ export default function WorkoutPage() {
 
             {/* Controls */}
             <div className="px-4 pb-safe pb-8 flex gap-3">
-              <button
+              <motion.button
+                whileTap={{ scale: 0.94 }}
                 onClick={handlePauseResume}
-                className="flex-1 py-4 bg-dark-700 rounded-xl font-display font-bold text-dark-100 flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                className="flex-1 py-4 glass-strong rounded-2xl font-display font-bold text-dark-100 flex items-center justify-center gap-2 transition-transform"
               >
                 {isPaused ? <><Play size={20} /> Resume</> : <><Pause size={20} /> Pause</>}
-              </button>
-              <button
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.94 }}
                 onClick={handleFinish}
-                className="flex-1 py-4 bg-brand-500 rounded-xl font-display font-bold text-white flex items-center justify-center gap-2 active:scale-95 transition-transform"
+                className="flex-1 py-4 rounded-2xl font-display font-bold text-white flex items-center justify-center gap-2 transition-transform shadow-brand-glow"
+                style={{ background: 'linear-gradient(135deg, #fb923c 0%, #f97316 50%, #c2410c 100%)' }}
               >
                 <Square size={20} fill="white" /> Finish
-              </button>
+              </motion.button>
             </div>
           </motion.div>
         )}
@@ -420,12 +474,22 @@ export default function WorkoutPage() {
         {phase === 'complete' && result && (
           <motion.div key="complete" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="px-4 pt-8 space-y-5">
             <div className="text-center">
-              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', delay: 0.2 }} className="text-7xl mb-4">
+              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', delay: 0.2 }} className="text-7xl mb-4 float">
                 {result.verified ? '🎉' : '💪'}
               </motion.div>
-              <h2 className="font-display text-3xl font-bold text-dark-50">Workout Complete!</h2>
+              <h2 className="font-display text-3xl font-extrabold gradient-text">Workout Complete!</h2>
               <p className="text-dark-400 mt-1">{result.verified ? 'Verified workout! Great job.' : 'Good effort! Try to get a higher score.'}</p>
             </div>
+
+            {/* AI summary */}
+            {aiSummary && (
+              <AICoachSummary
+                grade={aiSummary.grade}
+                narrative={aiSummary.narrative}
+                tips={aiSummary.tips}
+                insights={aiSummary.insights}
+              />
+            )}
 
             <Card className="space-y-3">
               {[

@@ -8,9 +8,11 @@ import { useApi } from '@/hooks/useApi';
 import { useSensors } from '@/hooks/useSensors';
 import { AppShell } from '@/components/ui/AppShell';
 import { Card, ProgressRing, Skeleton } from '@/components/ui/index';
+import { AICoachLive } from '@/components/ui/AICoach';
 import { Play, Pause, SkipForward, Square, Heart, Footprints, Activity } from 'lucide-react';
 import { EXERCISE_CONFIGS, formatDuration } from '@/lib/utils/exercises';
 import { computeVerificationScore } from '@/lib/utils/verification';
+import { topInsight, CoachInsight } from '@/lib/utils/aiCoach';
 import { ISensorSnapshot } from '@/types';
 
 type Phase = 'overview' | 'exercise' | 'rest' | 'complete';
@@ -29,9 +31,11 @@ export default function ProgramRunnerPage() {
   const [restRemaining, setRestRemaining] = useState(0);
   const [paused, setPaused] = useState(false);
   const [savedSessionIds, setSavedSessionIds] = useState<string[]>([]);
+  const [aiInsight, setAiInsight] = useState<CoachInsight | null>(null);
 
   const snapshotsRef = useRef<ISensorSnapshot[]>([]);
   const tickRef = useRef<NodeJS.Timeout>();
+  const aiRef = useRef<NodeJS.Timeout>();
 
   const handleSnapshot = useCallback((s: ISensorSnapshot) => {
     snapshotsRef.current.push(s);
@@ -84,6 +88,36 @@ export default function ProgramRunnerPage() {
       if (tickRef.current) clearInterval(tickRef.current);
     };
   }, [phase, paused]);
+
+  // AI live coach during exercise
+  useEffect(() => {
+    if (phase !== 'exercise' || paused || !currentExercise) {
+      clearInterval(aiRef.current);
+      return;
+    }
+    const tick = () => {
+      const score = computeVerificationScore(
+        snapshotsRef.current,
+        secondsElapsed,
+        reps,
+        currentExercise.exerciseType
+      );
+      const insight = topInsight({
+        exerciseType: currentExercise.exerciseType,
+        reps,
+        targetReps: currentExercise.targetReps || 0,
+        durationSeconds: secondsElapsed,
+        heartRate: heartRate ?? undefined,
+        steps,
+        verification: score,
+        recentSnapshots: snapshotsRef.current.slice(-60),
+      });
+      if (insight) setAiInsight(insight);
+    };
+    tick();
+    aiRef.current = setInterval(tick, 6000);
+    return () => clearInterval(aiRef.current);
+  }, [phase, paused, currentExercise, secondsElapsed, reps, heartRate, steps]);
 
   const startProgram = async () => {
     snapshotsRef.current = [];
@@ -359,28 +393,37 @@ export default function ProgramRunnerPage() {
           {hrError && <p className="text-xs text-red-400 text-center">{hrError}</p>}
 
           {!isDuration && (
-            <button
+            <motion.button
+              whileTap={{ scale: 0.92 }}
               onPointerDown={handleRep}
-              className="w-32 h-32 rounded-full bg-brand-500/20 border-2 border-brand-500/50 flex items-center justify-center active:bg-brand-500/40 select-none"
+              className="w-32 h-32 rounded-full glass-brand active-pulse flex items-center justify-center select-none"
             >
-              <span className="font-display text-xl font-bold text-brand-400">TAP</span>
-            </button>
+              <span className="font-display text-xl font-bold text-brand-300">TAP</span>
+            </motion.button>
           )}
         </div>
 
+        {/* AI live coach */}
+        <div className="px-4 pb-2">
+          <AICoachLive insight={aiInsight} />
+        </div>
+
         <div className="px-4 pb-safe pb-8 flex gap-3">
-          <button
+          <motion.button
+            whileTap={{ scale: 0.94 }}
             onClick={() => setPaused(p => !p)}
-            className="flex-1 py-4 bg-dark-700 rounded-xl font-display font-bold text-dark-100 flex items-center justify-center gap-2 active:scale-95"
+            className="flex-1 py-4 glass-strong rounded-2xl font-display font-bold text-dark-100 flex items-center justify-center gap-2"
           >
             {paused ? <><Play size={18} /> Resume</> : <><Pause size={18} /> Pause</>}
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.94 }}
             onClick={finishCurrentSet}
-            className="flex-1 py-4 bg-brand-500 rounded-xl font-display font-bold text-white flex items-center justify-center gap-2 active:scale-95"
+            className="flex-1 py-4 rounded-2xl font-display font-bold text-white flex items-center justify-center gap-2 shadow-brand-glow"
+            style={{ background: 'linear-gradient(135deg, #fb923c 0%, #f97316 50%, #c2410c 100%)' }}
           >
             <Square size={18} fill="white" /> {exerciseDone ? 'Done' : 'Finish Set'}
-          </button>
+          </motion.button>
         </div>
       </div>
     </AppShell>
@@ -403,18 +446,19 @@ function SensorTile({
   hint?: string;
 }) {
   return (
-    <button
+    <motion.button
+      whileTap={onClick ? { scale: 0.95 } : undefined}
       onClick={onClick}
       disabled={!onClick}
-      className="bg-dark-800 border border-dark-700 rounded-xl p-2.5 text-center active:scale-95 transition-transform disabled:active:scale-100"
+      className="glass-card rounded-2xl p-2.5 text-center transition-transform disabled:active:scale-100"
     >
-      <div className="flex items-center justify-center gap-1 text-xs text-dark-500">
+      <div className="flex items-center justify-center gap-1 text-[10px] uppercase tracking-wider text-dark-400 font-semibold">
         {icon}
         <span>{label}</span>
       </div>
-      <p className="font-display font-bold text-dark-50 text-lg leading-tight mt-0.5">{value}</p>
+      <p className="font-display font-bold text-dark-50 text-lg leading-tight mt-1">{value}</p>
       {unit && <p className="text-[10px] text-dark-500">{unit}</p>}
-      {hint && <p className="text-[10px] text-brand-400 mt-0.5">{hint}</p>}
-    </button>
+      {hint && <p className="text-[10px] text-brand-300 mt-0.5">{hint}</p>}
+    </motion.button>
   );
 }

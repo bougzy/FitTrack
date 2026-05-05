@@ -4,12 +4,31 @@ import { cn } from '@/lib/utils/cn';
 import { motion } from 'framer-motion';
 
 // ============ CARD ============
-export function Card({ children, className, onClick }: { children: React.ReactNode; className?: string; onClick?: () => void }) {
+type CardVariant = 'default' | 'glass' | 'glass-strong' | 'glass-brand';
+
+export function Card({
+  children,
+  className,
+  onClick,
+  variant = 'glass',
+}: {
+  children: React.ReactNode;
+  className?: string;
+  onClick?: () => void;
+  variant?: CardVariant;
+}) {
+  const variantClass: Record<CardVariant, string> = {
+    default: 'bg-dark-800 border border-dark-700',
+    glass: 'glass-card',
+    'glass-strong': 'glass-strong',
+    'glass-brand': 'glass-brand',
+  };
   return (
     <div
       onClick={onClick}
       className={cn(
-        'bg-dark-800 border border-dark-700 rounded-2xl p-4',
+        'rounded-2xl p-4',
+        variantClass[variant],
         onClick && 'cursor-pointer active:scale-[0.98] transition-transform exercise-card',
         className
       )}
@@ -20,18 +39,24 @@ export function Card({ children, className, onClick }: { children: React.ReactNo
 }
 
 // ============ STAT CARD ============
-export function StatCard({ label, value, icon, sub, color = 'brand' }: {
-  label: string; value: string | number; icon: string; sub?: string; color?: string;
+export function StatCard({ label, value, icon, sub, accent = 'brand' }: {
+  label: string; value: string | number; icon: string; sub?: string; accent?: 'brand' | 'purple' | 'green' | 'blue';
 }) {
+  const tints: Record<string, string> = {
+    brand: 'from-brand-500/25 to-brand-700/10',
+    purple: 'from-purple-500/25 to-indigo-700/10',
+    green: 'from-green-500/25 to-emerald-700/10',
+    blue: 'from-blue-500/25 to-cyan-700/10',
+  };
   return (
-    <Card className="flex items-center gap-3">
-      <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-${color}-500/15 flex-shrink-0`}>
+    <Card className="flex items-center gap-3 lift">
+      <div className={cn('w-12 h-12 rounded-xl flex items-center justify-center text-2xl flex-shrink-0 bg-gradient-to-br border border-white/10 backdrop-blur-md', tints[accent])}>
         {icon}
       </div>
       <div className="min-w-0">
-        <p className="text-dark-400 text-xs font-medium uppercase tracking-wide">{label}</p>
+        <p className="text-dark-400 text-[10px] font-medium uppercase tracking-widest">{label}</p>
         <p className="font-display text-2xl font-bold text-dark-50 leading-tight">{value}</p>
-        {sub && <p className="text-dark-500 text-xs mt-0.5">{sub}</p>}
+        {sub && <p className="text-dark-500 text-[10px] mt-0.5">{sub}</p>}
       </div>
     </Card>
   );
