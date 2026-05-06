@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
@@ -246,6 +247,27 @@ export default function WorkoutPage() {
     else pauseSession();
   };
 
+  // -------- Go Live --------
+  const router = useRouter();
+  const [creatingLive, setCreatingLive] = useState(false);
+
+  const handleGoLive = async () => {
+    setCreatingLive(true);
+    const res = await request<any>('/api/live-sessions', {
+      method: 'POST',
+      body: {
+        title: `${user?.name?.split(' ')[0] || 'My'} ${EXERCISE_CONFIGS[selectedExercise]?.label || 'Workout'}`,
+        exerciseType: selectedExercise,
+        isPublic: true,
+        groupId: selectedGroups[0],
+      },
+    });
+    setCreatingLive(false);
+    if (res?.success) {
+      router.push(`/live/${res.data.joinCode}`);
+    }
+  };
+
   const exercisesByCategory = getExercisesByCategory();
   const config = EXERCISE_CONFIGS[selectedExercise];
 
@@ -374,13 +396,34 @@ export default function WorkoutPage() {
               </div>
             )}
 
-            <button
-              onClick={handleStart}
-              className="w-full py-4 bg-gradient-to-r from-brand-500 to-brand-600 text-white font-display font-bold rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-transform brand-glow"
-            >
-              <Play size={20} fill="white" />
-              Start Session
-            </button>
+            <div className="flex gap-2">
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                onClick={handleStart}
+                className="flex-1 py-4 rounded-2xl font-display font-extrabold text-white shadow-brand-glow flex items-center justify-center gap-2"
+                style={{ background: 'linear-gradient(135deg, #fb923c 0%, #f97316 50%, #c2410c 100%)' }}
+              >
+                <Play size={20} fill="white" />
+                Start
+              </motion.button>
+              <motion.button
+                whileTap={{ scale: 0.96 }}
+                onClick={handleGoLive}
+                disabled={creatingLive}
+                title="Host a live session and invite friends"
+                className="px-5 py-4 rounded-2xl font-display font-extrabold text-white relative overflow-hidden flex items-center justify-center gap-2"
+                style={{ background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 60%, #991b1b 100%)' }}
+              >
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white/60 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white" />
+                </span>
+                {creatingLive ? 'Setting up…' : 'Go Live'}
+              </motion.button>
+            </div>
+            <p className="text-[11px] text-dark-500 text-center -mt-2">
+              Solo workout · or <strong className="text-red-300">Go Live</strong> to host your selected groups
+            </p>
           </motion.div>
         )}
 

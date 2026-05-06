@@ -13,6 +13,7 @@ import { format } from 'date-fns';
 import Link from 'next/link';
 import { NotificationPanel } from '@/components/notifications/NotificationPanel';
 import { RecoveryCard } from '@/components/recovery/RecoveryCard';
+import { LiveSessionsBanner } from '@/components/live/LiveSessionsBanner';
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
@@ -73,6 +74,9 @@ export default function DashboardPage() {
             <span className="text-dark-50"> 👋</span>
           </h1>
         </motion.div>
+
+        {/* Live sessions discovery — hidden when empty */}
+        <LiveSessionsBanner />
 
         {/* Recovery / readiness */}
         <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}>
