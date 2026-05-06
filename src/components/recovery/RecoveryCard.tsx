@@ -215,7 +215,7 @@ function RecoveryModal({
             onClick={submit}
             disabled={loading}
             className="w-full py-3.5 rounded-2xl font-display font-bold text-white shadow-brand-glow"
-            style={{ background: 'linear-gradient(135deg, #fb923c 0%, #f97316 50%, #c2410c 100%)' }}
+            style={{ background: 'linear-gradient(135deg, #22d3ee 0%, #06b6d4 55%, #7e22ce 100%)' }}
           >
             {loading ? 'Saving…' : 'Save Check-in'}
           </button>

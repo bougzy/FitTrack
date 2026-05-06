@@ -102,7 +102,7 @@ export function StakesPanel({ groupId }: { groupId: string }) {
                           className="h-full rounded-full transition-all"
                           style={{
                             width: `${pct}%`,
-                            background: 'linear-gradient(90deg, #fb923c, #f97316)',
+                            background: 'linear-gradient(90deg, #22d3ee, #06b6d4)',
                           }}
                         />
                       </div>
@@ -298,7 +298,7 @@ function CreateStakeModal({
             onClick={submit}
             disabled={loading}
             className="w-full py-3.5 rounded-2xl font-display font-bold text-white shadow-brand-glow"
-            style={{ background: 'linear-gradient(135deg, #fb923c 0%, #f97316 50%, #c2410c 100%)' }}
+            style={{ background: 'linear-gradient(135deg, #22d3ee 0%, #06b6d4 55%, #7e22ce 100%)' }}
           >
             {loading ? 'Locking…' : `Lock ${form.stakeXP} XP`}
           </button>

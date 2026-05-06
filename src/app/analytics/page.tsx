@@ -13,7 +13,7 @@ import { formatDuration } from '@/lib/utils/exercises';
 import { Share2 } from 'lucide-react';
 import { WhatsAppShare } from '@/components/ui/WhatsAppShare';
 
-const COLORS = ['#f97316', '#fb923c', '#fdba74', '#fed7aa', '#ffedd5', '#c2410c'];
+const COLORS = ['#06b6d4', '#22d3ee', '#a855f7', '#c084fc', '#f43f5e', '#fb7185'];
 
 export default function AnalyticsPage() {
   const { request, loading } = useApi();
@@ -35,11 +35,13 @@ export default function AnalyticsPage() {
   };
 
   const customTooltipStyle = {
-    backgroundColor: '#1a1a1a',
-    border: '1px solid #2a2a2a',
-    borderRadius: '8px',
-    color: '#f8f8f8',
+    backgroundColor: 'rgba(20, 23, 42, 0.95)',
+    border: '1px solid rgba(34, 211, 238, 0.25)',
+    borderRadius: '12px',
+    color: '#f5f6fa',
     fontSize: '12px',
+    backdropFilter: 'blur(20px)',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
   };
 
   return (
@@ -112,8 +114,8 @@ export default function AnalyticsPage() {
                   <BarChart data={data.dailyActivity} margin={{ top: 0, right: 0, left: -30, bottom: 0 }}>
                     <XAxis dataKey="label" tick={{ fill: '#737373', fontSize: 10 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fill: '#737373', fontSize: 10 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                    <Tooltip contentStyle={customTooltipStyle} cursor={{ fill: 'rgba(249,115,22,0.1)' }} />
-                    <Bar dataKey="workouts" fill="#f97316" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                    <Tooltip contentStyle={customTooltipStyle} cursor={{ fill: 'rgba(6, 182, 212, 0.1)' }} />
+                    <Bar dataKey="workouts" fill="#06b6d4" radius={[4, 4, 0, 0]} maxBarSize={32} />
                   </BarChart>
                 </ResponsiveContainer>
               </Card>
@@ -125,11 +127,11 @@ export default function AnalyticsPage() {
               <Card className="p-3">
                 <ResponsiveContainer width="100%" height={140}>
                   <LineChart data={data.dailyActivity} margin={{ top: 5, right: 5, left: -30, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#2a2a2a" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#21253a" />
                     <XAxis dataKey="label" tick={{ fill: '#737373', fontSize: 10 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fill: '#737373', fontSize: 10 }} axisLine={false} tickLine={false} />
                     <Tooltip contentStyle={customTooltipStyle} />
-                    <Line type="monotone" dataKey="calories" stroke="#f97316" strokeWidth={2.5} dot={{ fill: '#f97316', r: 3 }} activeDot={{ r: 5 }} />
+                    <Line type="monotone" dataKey="calories" stroke="#06b6d4" strokeWidth={2.5} dot={{ fill: '#06b6d4', r: 3 }} activeDot={{ r: 5 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </Card>
@@ -173,9 +175,9 @@ export default function AnalyticsPage() {
                     <Tooltip
                       contentStyle={customTooltipStyle}
                       formatter={(val: number) => [formatDuration(val), 'Duration']}
-                      cursor={{ fill: 'rgba(249,115,22,0.1)' }}
+                      cursor={{ fill: 'rgba(6, 182, 212, 0.1)' }}
                     />
-                    <Bar dataKey="duration" fill="#c2410c" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                    <Bar dataKey="duration" fill="#a855f7" radius={[4, 4, 0, 0]} maxBarSize={32} />
                   </BarChart>
                 </ResponsiveContainer>
               </Card>

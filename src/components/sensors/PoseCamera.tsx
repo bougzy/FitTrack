@@ -165,7 +165,7 @@ export function PoseCamera({ exerciseType, onRep, onForm, active }: PoseCameraPr
       [26, 28],
     ];
 
-    ctx.strokeStyle = '#f97316';
+    ctx.strokeStyle = '#22d3ee';
     ctx.lineWidth = 3;
     ctx.shadowColor = 'rgba(249, 115, 22, 0.6)';
     ctx.shadowBlur = 8;
@@ -179,7 +179,7 @@ export function PoseCamera({ exerciseType, onRep, onForm, active }: PoseCameraPr
       ctx.stroke();
     }
 
-    ctx.fillStyle = '#fb923c';
+    ctx.fillStyle = '#06b6d4';
     ctx.shadowBlur = 0;
     for (const lm of landmarks) {
       if ((lm.visibility ?? 1) < 0.3) continue;

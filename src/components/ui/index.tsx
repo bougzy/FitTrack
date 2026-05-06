@@ -96,14 +96,21 @@ export function ProgressRing({ value, max, size = 80, strokeWidth = 6, children 
     <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
         <circle cx={size / 2} cy={size / 2} r={radius} fill="none" strokeWidth={strokeWidth} className="progress-ring-track" />
+        <defs>
+          <linearGradient id="ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#22d3ee" />
+            <stop offset="60%" stopColor="#06b6d4" />
+            <stop offset="100%" stopColor="#a855f7" />
+          </linearGradient>
+        </defs>
         <circle
           cx={size / 2} cy={size / 2} r={radius} fill="none"
           strokeWidth={strokeWidth}
-          stroke="#f97316"
+          stroke="url(#ring-gradient)"
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={offset}
-          style={{ transition: 'stroke-dashoffset 0.5s ease' }}
+          style={{ transition: 'stroke-dashoffset 0.5s ease', filter: 'drop-shadow(0 0 6px rgba(34, 211, 238, 0.45))' }}
         />
       </svg>
       <div className="absolute inset-0 flex items-center justify-center">{children}</div>

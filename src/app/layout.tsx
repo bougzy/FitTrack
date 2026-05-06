@@ -48,7 +48,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#f97316',
+  themeColor: '#06b6d4',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
@@ -71,7 +71,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" sizes="192x192" href="/icons/icon-192.png" />
         <link rel="apple-touch-icon" sizes="512x512" href="/icons/icon-512.png" />
         {/* Microsoft */}
-        <meta name="msapplication-TileColor" content="#f97316" />
+        <meta name="msapplication-TileColor" content="#06b6d4" />
         <meta name="msapplication-TileImage" content="/icons/icon-192.png" />
       </head>
       <body
@@ -84,14 +84,20 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             position="top-center"
             toastOptions={{
               style: {
-                background: '#1a1a1a',
-                color: '#f8f8f8',
-                border: '1px solid #3d3d3d',
-                borderRadius: '12px',
+                background: 'rgba(20, 23, 42, 0.92)',
+                color: '#f5f6fa',
+                border: '1px solid rgba(34, 211, 238, 0.2)',
+                borderRadius: '14px',
                 fontFamily: 'var(--font-body)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5)',
               },
               success: {
-                iconTheme: { primary: '#f97316', secondary: '#0a0a0a' },
+                iconTheme: { primary: '#06b6d4', secondary: '#04050d' },
+              },
+              error: {
+                iconTheme: { primary: '#f43f5e', secondary: '#04050d' },
               },
             }}
           />

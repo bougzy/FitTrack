@@ -401,7 +401,7 @@ export default function WorkoutPage() {
                 whileTap={{ scale: 0.96 }}
                 onClick={handleStart}
                 className="flex-1 py-4 rounded-2xl font-display font-extrabold text-white shadow-brand-glow flex items-center justify-center gap-2"
-                style={{ background: 'linear-gradient(135deg, #fb923c 0%, #f97316 50%, #c2410c 100%)' }}
+                style={{ background: 'linear-gradient(135deg, #22d3ee 0%, #06b6d4 55%, #7e22ce 100%)' }}
               >
                 <Play size={20} fill="white" />
                 Start
@@ -589,7 +589,7 @@ export default function WorkoutPage() {
                 whileTap={{ scale: 0.94 }}
                 onClick={handleFinish}
                 className="flex-1 py-4 rounded-2xl font-display font-bold text-white flex items-center justify-center gap-2 transition-transform shadow-brand-glow"
-                style={{ background: 'linear-gradient(135deg, #fb923c 0%, #f97316 50%, #c2410c 100%)' }}
+                style={{ background: 'linear-gradient(135deg, #22d3ee 0%, #06b6d4 55%, #7e22ce 100%)' }}
               >
                 <Square size={20} fill="white" /> Finish
               </motion.button>

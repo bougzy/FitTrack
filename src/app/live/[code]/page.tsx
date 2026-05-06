@@ -522,7 +522,7 @@ function LobbyView({
                 whileTap={{ scale: 0.95 }}
                 onClick={onHostStart}
                 className="flex-1 py-3 rounded-2xl font-display font-extrabold text-white shadow-brand-glow flex items-center justify-center gap-2"
-                style={{ background: 'linear-gradient(135deg, #fb923c 0%, #f97316 50%, #c2410c 100%)' }}
+                style={{ background: 'linear-gradient(135deg, #22d3ee 0%, #06b6d4 55%, #7e22ce 100%)' }}
               >
                 <Play size={16} fill="white" /> Start Live
               </motion.button>
@@ -533,7 +533,7 @@ function LobbyView({
               onClick={onJoin}
               disabled={joined}
               className="flex-1 py-3 rounded-2xl font-display font-extrabold text-white shadow-brand-glow flex items-center justify-center gap-2 disabled:opacity-60"
-              style={{ background: 'linear-gradient(135deg, #fb923c 0%, #f97316 50%, #c2410c 100%)' }}
+              style={{ background: 'linear-gradient(135deg, #22d3ee 0%, #06b6d4 55%, #7e22ce 100%)' }}
             >
               <Sparkles size={16} />
               {joined ? "You're in — waiting for host" : 'Join Session'}
@@ -623,7 +623,7 @@ function EndedView({ state, preview }: { state: any; preview: any }) {
         <button
           onClick={() => router.push('/dashboard')}
           className="w-full py-3 rounded-2xl font-display font-bold text-white shadow-brand-glow"
-          style={{ background: 'linear-gradient(135deg, #fb923c 0%, #f97316 50%, #c2410c 100%)' }}
+          style={{ background: 'linear-gradient(135deg, #22d3ee 0%, #06b6d4 55%, #7e22ce 100%)' }}
         >
           Back to Dashboard
         </button>

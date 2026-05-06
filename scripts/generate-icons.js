@@ -20,8 +20,9 @@ sizes.forEach(size => {
 
   // Background
   const gradient = ctx.createLinearGradient(0, 0, size, size);
-  gradient.addColorStop(0, '#f97316');
-  gradient.addColorStop(1, '#c2410c');
+  gradient.addColorStop(0, '#22d3ee');
+  gradient.addColorStop(0.6, '#06b6d4');
+  gradient.addColorStop(1, '#7e22ce');
   ctx.fillStyle = gradient;
   
   // Rounded rect

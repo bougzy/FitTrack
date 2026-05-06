@@ -420,7 +420,7 @@ export default function ProgramRunnerPage() {
             whileTap={{ scale: 0.94 }}
             onClick={finishCurrentSet}
             className="flex-1 py-4 rounded-2xl font-display font-bold text-white flex items-center justify-center gap-2 shadow-brand-glow"
-            style={{ background: 'linear-gradient(135deg, #fb923c 0%, #f97316 50%, #c2410c 100%)' }}
+            style={{ background: 'linear-gradient(135deg, #22d3ee 0%, #06b6d4 55%, #7e22ce 100%)' }}
           >
             <Square size={18} fill="white" /> {exerciseDone ? 'Done' : 'Finish Set'}
           </motion.button>
