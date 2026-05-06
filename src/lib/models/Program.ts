@@ -18,6 +18,18 @@ export interface IProgramDocument extends Document {
   shared: boolean;
   timesStarted: number;
   timesCompleted: number;
+  autoProgress: boolean; // if true, server bumps reps/duration after each completion
+  progressionLevel: number; // increments when auto-progress fires
+  ratings: {
+    userId: mongoose.Types.ObjectId;
+    stars: number;
+    comment: string;
+    createdAt: Date;
+  }[];
+  avgRating: number;
+  ratingCount: number;
+  subscribers: mongoose.Types.ObjectId[]; // users who copied this from marketplace
+  copiedFrom?: mongoose.Types.ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -45,12 +57,27 @@ const ProgramSchema = new Schema<IProgramDocument>(
     shared: { type: Boolean, default: false },
     timesStarted: { type: Number, default: 0 },
     timesCompleted: { type: Number, default: 0 },
+    autoProgress: { type: Boolean, default: false },
+    progressionLevel: { type: Number, default: 0 },
+    ratings: [
+      {
+        userId: { type: Schema.Types.ObjectId, ref: 'User' },
+        stars: { type: Number, min: 1, max: 5 },
+        comment: { type: String, default: '' },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
+    avgRating: { type: Number, default: 0 },
+    ratingCount: { type: Number, default: 0 },
+    subscribers: [{ type: Schema.Types.ObjectId, ref: 'User' }],
+    copiedFrom: { type: Schema.Types.ObjectId, ref: 'Program' },
   },
   { timestamps: true }
 );
 
 ProgramSchema.index({ userId: 1, createdAt: -1 });
-ProgramSchema.index({ shared: 1 });
+ProgramSchema.index({ shared: 1, avgRating: -1 });
+ProgramSchema.index({ shared: 1, timesStarted: -1 });
 
 const Program: Model<IProgramDocument> =
   mongoose.models.Program ||

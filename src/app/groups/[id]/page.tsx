@@ -12,6 +12,8 @@ import { Trophy, Users, Activity, Crown, Medal, Send } from 'lucide-react';
 import { formatDuration } from '@/lib/utils/exercises';
 import { format } from 'date-fns';
 import { WhatsAppShare } from '@/components/ui/WhatsAppShare';
+import { StakesPanel } from '@/components/stakes/StakesPanel';
+import { LiveRoomBanner } from '@/components/groups/LiveRoomBanner';
 
 export default function GroupDetailPage() {
   const { id } = useParams() as { id: string };
@@ -20,7 +22,7 @@ export default function GroupDetailPage() {
   const [data, setData] = useState<any>(null);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [posts, setPosts] = useState<any[]>([]);
-  const [tab, setTab] = useState<'feed' | 'leaderboard' | 'members'>('feed');
+  const [tab, setTab] = useState<'feed' | 'leaderboard' | 'members' | 'stakes'>('feed');
   const [lbPeriod, setLbPeriod] = useState<'week' | 'month' | 'alltime'>('week');
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [postText, setPostText] = useState('');
@@ -148,23 +150,34 @@ export default function GroupDetailPage() {
           </Card>
         )}
 
+        {/* Live presence banner — only renders when someone is mid-workout */}
+        <LiveRoomBanner groupId={id} />
+
         {/* Tabs */}
-        <div className="flex gap-1 bg-dark-800 p-1 rounded-xl">
+        <div className="flex gap-1 glass-strong p-1 rounded-2xl">
           {[
             { key: 'feed', icon: Activity, label: 'Feed' },
             { key: 'leaderboard', icon: Trophy, label: 'Board' },
+            { key: 'stakes', icon: 'target', label: 'Stakes' },
             { key: 'members', icon: Users, label: 'Members' },
-          ].map(({ key, icon: Icon, label }) => (
-            <button
-              key={key}
-              onClick={() => setTab(key as any)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-xs font-display font-semibold transition-all ${tab === key ? 'bg-brand-500 text-white' : 'text-dark-400'}`}
-            >
-              <Icon size={14} />
-              {label}
-            </button>
-          ))}
+          ].map(({ key, icon, label }) => {
+            const Icon = icon === 'target' ? null : (icon as any);
+            return (
+              <button
+                key={key}
+                onClick={() => setTab(key as any)}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-[11px] font-display font-semibold transition-all ${
+                  tab === key ? 'bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-brand-glow' : 'text-dark-400'
+                }`}
+              >
+                {Icon ? <Icon size={13} /> : <span>🎯</span>}
+                {label}
+              </button>
+            );
+          })}
         </div>
+
+        {tab === 'stakes' && <StakesPanel groupId={id} />}
 
         {/* Feed */}
         {tab === 'feed' && (

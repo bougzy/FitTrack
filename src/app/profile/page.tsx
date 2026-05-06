@@ -8,7 +8,8 @@ import { useAuthStore } from '@/store/authStore';
 import { useApi } from '@/hooks/useApi';
 import { AppShell } from '@/components/ui/AppShell';
 import { Card, LevelBadge, StreakDisplay, BadgeChip } from '@/components/ui/index';
-import { LogOut, ChevronRight, Bell, Moon, Target, Shield } from 'lucide-react';
+import { LogOut, ChevronRight, Bell, Moon, Target, Shield, BellRing } from 'lucide-react';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 
 const ALL_BADGES = [
   { id: 'first_workout', name: 'First Step', icon: '🎉', description: 'Complete first workout' },
@@ -55,6 +56,18 @@ export default function ProfilePage() {
     const newPref = { ...user?.preferences, notificationsEnabled: !user?.preferences?.notificationsEnabled };
     updateUser({ preferences: newPref as any });
     await request('/api/auth/me', { method: 'PATCH', body: { preferences: newPref } });
+  };
+
+  const push = usePushNotifications();
+  const togglePush = async () => {
+    if (push.subscribed) {
+      await push.unsubscribe();
+      toast.success('Push notifications disabled');
+    } else {
+      const res = await push.subscribe();
+      if (res.ok) toast.success('Push notifications enabled');
+      else toast.error(res.reason || 'Could not enable push');
+    }
   };
 
   const earnedBadgeIds = user?.badges?.map(b => b.id) || [];
@@ -159,10 +172,18 @@ export default function ProfilePage() {
           <Card className="divide-y divide-dark-700 p-0 overflow-hidden">
             <SettingRow
               icon={<Bell size={18} />}
-              label="Notifications"
+              label="In-app Notifications"
               value={user?.preferences?.notificationsEnabled !== false}
               onToggle={toggleNotifications}
             />
+            {push.supported && (
+              <SettingRow
+                icon={<BellRing size={18} />}
+                label={push.busy ? 'Updating…' : push.subscribed ? 'Push Notifications · On' : 'Enable Push Notifications'}
+                value={push.subscribed}
+                onToggle={togglePush}
+              />
+            )}
             <SettingRow
               icon={<Moon size={18} />}
               label="Dark Mode"

@@ -9,7 +9,7 @@ import { useAuthStore } from '@/store/authStore';
 import { AppShell } from '@/components/ui/AppShell';
 import { Card, EmptyState, Skeleton } from '@/components/ui/index';
 import { AIRecommendCard } from '@/components/ui/AICoach';
-import { Plus, Play, Trash2, Clock, Dumbbell, Globe, Lock, X, Sparkles } from 'lucide-react';
+import { Plus, Play, Trash2, Clock, Dumbbell, Globe, Lock, X, Sparkles, Star, TrendingUp, Zap, Download } from 'lucide-react';
 import { EXERCISE_CONFIGS, getExercisesByCategory } from '@/lib/utils/exercises';
 import { recommendPrograms } from '@/lib/utils/aiCoach';
 
@@ -55,6 +55,24 @@ export default function ProgramsPage() {
       showError: false,
     });
     router.push(`/programs/${programId}`);
+  };
+
+  const handleSubscribe = async (programId: string) => {
+    const res = await request<any>(`/api/programs/${programId}/subscribe`, { method: 'POST' });
+    if (res?.success) {
+      toast.success(res.alreadySubscribed ? 'Already in your library' : `${res.data.name} added`);
+      setTab('mine');
+      loadData();
+    }
+  };
+
+  const handleProgress = async (programId: string) => {
+    const res = await request<any>(`/api/programs/${programId}/progress`, { method: 'POST' });
+    if (res?.success) {
+      if (res.progressed > 0) toast.success(res.message);
+      else toast(res.message || 'No bumps yet — keep going.');
+      loadData();
+    }
   };
 
   const handleCreateFromTemplate = (tpl: any) => {
@@ -196,28 +214,65 @@ export default function ProgramsPage() {
                     )}
                   </div>
                   {p.description && <p className="text-xs text-dark-400 mt-0.5 line-clamp-2">{p.description}</p>}
-                  <div className="flex items-center gap-3 mt-2 text-xs text-dark-500">
+                  <div className="flex items-center gap-3 mt-2 text-xs text-dark-500 flex-wrap">
                     <span className="flex items-center gap-1">
                       <Dumbbell size={11} /> {p.exercises?.length || 0} exercises
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock size={11} /> ~{p.estimatedMinutes || 0}m
                     </span>
-                    {p.timesStarted > 0 && <span>{p.timesStarted}× started</span>}
+                    {p.timesStarted > 0 && <span className="flex items-center gap-1"><TrendingUp size={11} />{p.timesStarted}×</span>}
+                    {p.progressionLevel > 0 && (
+                      <span className="flex items-center gap-1 text-purple-300">
+                        <Zap size={11} /> Lv {p.progressionLevel}
+                      </span>
+                    )}
+                    {p.avgRating > 0 && (
+                      <span className="flex items-center gap-1 text-yellow-300">
+                        <Star size={11} fill="currentColor" />
+                        {p.avgRating.toFixed(1)}
+                        <span className="text-dark-500">({p.ratingCount})</span>
+                      </span>
+                    )}
+                    {p.autoProgress && (
+                      <span className="text-[10px] px-1.5 py-0.5 bg-purple-500/15 text-purple-300 rounded-md font-semibold">
+                        AUTO-PROGRESS
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
               <div className="flex gap-2 mt-3">
-                <button
-                  onClick={() => handleStart(p._id)}
-                  className="flex-1 py-2.5 bg-gradient-to-r from-brand-500 to-brand-600 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 active:scale-95 transition-transform"
-                >
-                  <Play size={14} fill="white" /> Start
-                </button>
+                {tab === 'shared' ? (
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => handleSubscribe(p._id)}
+                    className="flex-1 py-2.5 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5 shadow-ai-glow"
+                  >
+                    <Download size={14} /> Add to Library
+                  </motion.button>
+                ) : (
+                  <motion.button
+                    whileTap={{ scale: 0.96 }}
+                    onClick={() => handleStart(p._id)}
+                    className="flex-1 py-2.5 bg-gradient-to-r from-brand-500 to-brand-600 text-white rounded-xl text-sm font-semibold flex items-center justify-center gap-1.5"
+                  >
+                    <Play size={14} fill="white" /> Start
+                  </motion.button>
+                )}
+                {tab === 'mine' && p.autoProgress && p.timesStarted > 0 && (
+                  <button
+                    onClick={() => handleProgress(p._id)}
+                    title="Run auto-progression now"
+                    className="px-3 py-2.5 bg-purple-500/15 border border-purple-500/30 text-purple-300 rounded-xl"
+                  >
+                    <Zap size={14} />
+                  </button>
+                )}
                 {tab === 'mine' && (
                   <button
                     onClick={() => handleDelete(p._id)}
-                    className="px-3 py-2.5 bg-dark-700 text-red-400 rounded-xl active:scale-95 transition-transform"
+                    className="px-3 py-2.5 bg-dark-700 text-red-400 rounded-xl"
                   >
                     <Trash2 size={14} />
                   </button>
@@ -263,6 +318,7 @@ function CreateProgramModal({ preset, onClose, onCreated }: { preset?: PresetDat
     description: preset?.description || '',
     difficulty: (preset?.difficulty || 'beginner') as 'beginner' | 'intermediate' | 'advanced',
     shared: preset?.shared || false,
+    autoProgress: false,
   });
   const [exercises, setExercises] = useState<ProgramExercise[]>(preset?.exercises || []);
   const [picking, setPicking] = useState(false);
@@ -395,6 +451,25 @@ function CreateProgramModal({ preset, onClose, onCreated }: { preset?: PresetDat
                 </div>
                 <div className={`w-12 h-6 rounded-full transition-colors flex-shrink-0 relative ${form.shared ? 'bg-brand-500' : 'bg-dark-500'}`}>
                   <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.shared ? 'translate-x-6' : 'translate-x-0.5'}`} />
+                </div>
+              </div>
+              <div
+                onClick={() => setForm({ ...form, autoProgress: !form.autoProgress })}
+                className={`flex items-center justify-between p-4 rounded-xl cursor-pointer border ${
+                  form.autoProgress ? 'bg-purple-500/10 border-purple-500/30' : 'bg-dark-700 border-dark-600'
+                }`}
+              >
+                <div className="flex-1 pr-4">
+                  <p className="text-sm font-medium text-dark-200 flex items-center gap-1.5">
+                    <Zap size={14} className={form.autoProgress ? 'text-purple-300' : ''} />
+                    Auto-progress
+                  </p>
+                  <p className="text-xs text-dark-500 mt-0.5">
+                    Bumps reps/duration after each clean run when verification ≥ 65
+                  </p>
+                </div>
+                <div className={`w-12 h-6 rounded-full transition-colors flex-shrink-0 relative ${form.autoProgress ? 'bg-purple-500' : 'bg-dark-500'}`}>
+                  <div className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${form.autoProgress ? 'translate-x-6' : 'translate-x-0.5'}`} />
                 </div>
               </div>
               <button

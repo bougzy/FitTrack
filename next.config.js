@@ -5,6 +5,7 @@ const withPWA = require('next-pwa')({
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
   buildExcludes: [/middleware-manifest\.json$/],
+  customWorkerDir: 'worker',
   runtimeCaching: [
     {
       urlPattern: /^\/api\/auth\/.*/i,

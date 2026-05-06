@@ -18,6 +18,7 @@ import { ISensorSnapshot } from '@/types';
 import { WhatsAppShare } from '@/components/ui/WhatsAppShare';
 import { AICoachLive, AICoachSummary } from '@/components/ui/AICoach';
 import { topInsight, postWorkoutSummary, CoachInsight } from '@/lib/utils/aiCoach';
+import { PoseCamera } from '@/components/sensors/PoseCamera';
 
 type WorkoutPhase = 'select' | 'setup' | 'active' | 'complete';
 
@@ -36,6 +37,9 @@ export default function WorkoutPage() {
   const [currentPrompt, setCurrentPrompt] = useState('');
   const [aiInsight, setAiInsight] = useState<CoachInsight | null>(null);
   const [aiSummary, setAiSummary] = useState<ReturnType<typeof postWorkoutSummary> | null>(null);
+  const [usePose, setUsePose] = useState(false);
+  const [poseFormScore, setPoseFormScore] = useState<number | null>(null);
+  const [poseIssues, setPoseIssues] = useState<string[]>([]);
   const antiCheatTimerRef = useRef<NodeJS.Timeout>();
   const verificationIntervalRef = useRef<NodeJS.Timeout>();
   const aiCoachIntervalRef = useRef<NodeJS.Timeout>();
@@ -93,6 +97,28 @@ export default function WorkoutPage() {
     }, 5000);
     return () => clearInterval(verificationIntervalRef.current);
   }, [isActive, seconds, selectedExercise, session, updateVerificationScore]);
+
+  // Live presence — ping every group the user is sharing this workout with
+  useEffect(() => {
+    if (!isActive || isPaused || selectedGroups.length === 0) return;
+    const ping = () => {
+      selectedGroups.forEach((gid) => {
+        request<any>(`/api/groups/${gid}/live`, {
+          method: 'POST',
+          showError: false,
+          body: {
+            exerciseType: selectedExercise,
+            reps: session?.reps || 0,
+            durationSeconds: seconds,
+            heartRate: heartRate ?? undefined,
+          },
+        });
+      });
+    };
+    ping();
+    const id = setInterval(ping, 30000);
+    return () => clearInterval(id);
+  }, [isActive, isPaused, selectedGroups, selectedExercise, session?.reps, seconds, heartRate, request]);
 
   // AI live coach — refresh top insight every 6 seconds
   useEffect(() => {
@@ -159,6 +185,15 @@ export default function WorkoutPage() {
     clearInterval(verificationIntervalRef.current);
     clearInterval(aiCoachIntervalRef.current);
     stopSession();
+
+    // Mark live presence as finished in any shared groups
+    selectedGroups.forEach((gid) => {
+      request<any>(`/api/groups/${gid}/live`, {
+        method: 'POST',
+        showError: false,
+        body: { finished: true, exerciseType: selectedExercise },
+      });
+    });
 
     // Final verification
     const finalScore = computeVerificationScore(
@@ -289,6 +324,29 @@ export default function WorkoutPage() {
                 </div>
               </div>
             )}
+
+            {/* AI camera form check toggle */}
+            <button
+              onClick={() => setUsePose(!usePose)}
+              className={`w-full p-3 rounded-2xl border flex items-center gap-3 transition-all ${
+                usePose
+                  ? 'border-purple-500/40 bg-gradient-to-br from-purple-500/15 to-indigo-500/5 shadow-ai-glow'
+                  : 'border-white/10 glass-card'
+              }`}
+            >
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                usePose ? 'bg-purple-500/30 border border-purple-500/40' : 'bg-white/5 border border-white/10'
+              }`}>
+                <Sparkles size={16} className={usePose ? 'text-purple-300' : 'text-dark-400'} />
+              </div>
+              <div className="flex-1 text-left">
+                <p className="font-display font-semibold text-dark-100 text-sm">AI Form Check</p>
+                <p className="text-[11px] text-dark-400">Front camera scores form + auto rep counts</p>
+              </div>
+              <div className={`w-10 h-5 rounded-full relative transition-colors ${usePose ? 'bg-purple-500' : 'bg-dark-600'}`}>
+                <div className={`absolute top-0.5 w-4 h-4 bg-white rounded-full transition-transform ${usePose ? 'translate-x-5' : 'translate-x-0.5'}`} />
+              </div>
+            </button>
 
             {/* Share with groups */}
             {myGroups.length > 0 && (
@@ -425,6 +483,32 @@ export default function WorkoutPage() {
                 </button>
               )}
             </div>
+
+            {/* Pose camera (optional) */}
+            {usePose && (
+              <div className="px-4 mb-3">
+                <PoseCamera
+                  exerciseType={selectedExercise}
+                  active={isActive && !isPaused}
+                  onRep={handleRepDetected}
+                  onForm={(score, issues) => {
+                    setPoseFormScore(score);
+                    setPoseIssues(issues);
+                  }}
+                />
+                {poseFormScore !== null && (
+                  <div className="mt-2 flex items-center justify-between glass-card rounded-xl p-2 text-xs">
+                    <span className="text-purple-300 font-semibold uppercase tracking-wider">AI Form</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-display font-bold text-dark-50">{poseFormScore}</span>
+                      {poseIssues.length > 0 && (
+                        <span className="text-yellow-300 text-[10px]">{poseIssues[0]}</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* AI live coach */}
             <div className="px-4 mb-2">

@@ -12,6 +12,7 @@ import { formatDuration } from '@/lib/utils/exercises';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { NotificationPanel } from '@/components/notifications/NotificationPanel';
+import { RecoveryCard } from '@/components/recovery/RecoveryCard';
 
 export default function DashboardPage() {
   const { user } = useAuthStore();
@@ -71,6 +72,11 @@ export default function DashboardPage() {
             <span className="gradient-text">{user?.name?.split(' ')[0] || 'there'}</span>
             <span className="text-dark-50"> 👋</span>
           </h1>
+        </motion.div>
+
+        {/* Recovery / readiness */}
+        <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.04 }}>
+          <RecoveryCard />
         </motion.div>
 
         {/* Streak + Level — hero glass card */}

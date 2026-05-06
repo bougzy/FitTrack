@@ -15,6 +15,14 @@ interface SensorState {
   hrConnected: boolean;
   hrError: string | null;
   steps: number;
+  // Optional cycling power meter
+  cyclingPower: number | null; // watts
+  cyclingCadence: number | null; // rpm
+  cyclingConnected: boolean;
+  // Running speed and cadence
+  runningSpeed: number | null; // m/s
+  runningCadence: number | null; // strides per minute
+  runningConnected: boolean;
 }
 
 interface UseSensorOptions {
@@ -27,6 +35,10 @@ interface UseSensorOptions {
 
 const HEART_RATE_SERVICE = 'heart_rate';
 const HEART_RATE_CHAR = 'heart_rate_measurement';
+const CYCLING_POWER_SERVICE = 'cycling_power';
+const CYCLING_POWER_MEASUREMENT = 'cycling_power_measurement';
+const RUNNING_SPEED_SERVICE = 'running_speed_and_cadence';
+const RUNNING_SPEED_MEASUREMENT = 'rsc_measurement';
 
 export function useSensors({
   onSnapshot,
@@ -47,6 +59,12 @@ export function useSensors({
     hrConnected: false,
     hrError: null,
     steps: 0,
+    cyclingPower: null,
+    cyclingCadence: null,
+    cyclingConnected: false,
+    runningSpeed: null,
+    runningCadence: null,
+    runningConnected: false,
   });
 
   const isActiveRef = useRef(false);
@@ -65,6 +83,10 @@ export function useSensors({
 
   const hrDeviceRef = useRef<any>(null);
   const hrCharRef = useRef<any>(null);
+  const cyclingDeviceRef = useRef<any>(null);
+  const cyclingCharRef = useRef<any>(null);
+  const runningDeviceRef = useRef<any>(null);
+  const runningCharRef = useRef<any>(null);
 
   // ---------- Heart Rate (Web Bluetooth) ----------
   const hrConnect = useCallback(async () => {
@@ -113,6 +135,94 @@ export function useSensors({
       // ignore
     }
     setState(s => ({ ...s, hrConnected: false, heartRate: null }));
+  }, []);
+
+  // ---------- Cycling Power Meter ----------
+  const cyclingConnect = useCallback(async () => {
+    try {
+      const nav = navigator as any;
+      if (!nav.bluetooth) {
+        setState(s => ({ ...s, hrError: 'Web Bluetooth not supported' }));
+        return;
+      }
+      const device = await nav.bluetooth.requestDevice({
+        filters: [{ services: [CYCLING_POWER_SERVICE] }],
+        optionalServices: [CYCLING_POWER_SERVICE],
+      });
+      cyclingDeviceRef.current = device;
+      device.addEventListener('gattserverdisconnected', () => {
+        setState(s => ({ ...s, cyclingConnected: false }));
+      });
+      const server = await device.gatt.connect();
+      const service = await server.getPrimaryService(CYCLING_POWER_SERVICE);
+      const char = await service.getCharacteristic(CYCLING_POWER_MEASUREMENT);
+      cyclingCharRef.current = char;
+      await char.startNotifications();
+      char.addEventListener('characteristicvaluechanged', (event: any) => {
+        const value = event.target.value as DataView;
+        // Bytes 0-1: flags, 2-3: instantaneous power (signed int16, watts)
+        const power = value.getInt16(2, true);
+        setState(s => ({ ...s, cyclingPower: power }));
+      });
+      setState(s => ({ ...s, cyclingConnected: true }));
+    } catch (err: any) {
+      setState(s => ({ ...s, hrError: err?.message || 'Failed to pair power meter' }));
+    }
+  }, []);
+
+  // ---------- Running Speed & Cadence ----------
+  const runningConnect = useCallback(async () => {
+    try {
+      const nav = navigator as any;
+      if (!nav.bluetooth) {
+        setState(s => ({ ...s, hrError: 'Web Bluetooth not supported' }));
+        return;
+      }
+      const device = await nav.bluetooth.requestDevice({
+        filters: [{ services: [RUNNING_SPEED_SERVICE] }],
+        optionalServices: [RUNNING_SPEED_SERVICE],
+      });
+      runningDeviceRef.current = device;
+      device.addEventListener('gattserverdisconnected', () => {
+        setState(s => ({ ...s, runningConnected: false }));
+      });
+      const server = await device.gatt.connect();
+      const service = await server.getPrimaryService(RUNNING_SPEED_SERVICE);
+      const char = await service.getCharacteristic(RUNNING_SPEED_MEASUREMENT);
+      runningCharRef.current = char;
+      await char.startNotifications();
+      char.addEventListener('characteristicvaluechanged', (event: any) => {
+        const value = event.target.value as DataView;
+        // Byte 0: flags, 1-2: speed (uint16, m/s with resolution 1/256)
+        const rawSpeed = value.getUint16(1, true);
+        const speed = rawSpeed / 256;
+        const cadence = value.getUint8(3); // strides per minute
+        setState(s => ({ ...s, runningSpeed: speed, runningCadence: cadence }));
+      });
+      setState(s => ({ ...s, runningConnected: true }));
+    } catch (err: any) {
+      setState(s => ({ ...s, hrError: err?.message || 'Failed to pair running pod' }));
+    }
+  }, []);
+
+  const cyclingDisconnect = useCallback(async () => {
+    try {
+      if (cyclingCharRef.current) await cyclingCharRef.current.stopNotifications().catch(() => {});
+      if (cyclingDeviceRef.current?.gatt?.connected) cyclingDeviceRef.current.gatt.disconnect();
+    } catch {
+      // ignore
+    }
+    setState(s => ({ ...s, cyclingConnected: false, cyclingPower: null, cyclingCadence: null }));
+  }, []);
+
+  const runningDisconnect = useCallback(async () => {
+    try {
+      if (runningCharRef.current) await runningCharRef.current.stopNotifications().catch(() => {});
+      if (runningDeviceRef.current?.gatt?.connected) runningDeviceRef.current.gatt.disconnect();
+    } catch {
+      // ignore
+    }
+    setState(s => ({ ...s, runningConnected: false, runningSpeed: null, runningCadence: null }));
   }, []);
 
   // ---------- Permissions ----------
@@ -262,8 +372,10 @@ export function useSensors({
       isActiveRef.current = false;
       if (intervalRef.current) clearInterval(intervalRef.current);
       hrDisconnect();
+      cyclingDisconnect();
+      runningDisconnect();
     };
-  }, [hrDisconnect]);
+  }, [hrDisconnect, cyclingDisconnect, runningDisconnect]);
 
   return {
     ...state,
@@ -272,5 +384,9 @@ export function useSensors({
     getSnapshots,
     hrConnect,
     hrDisconnect,
+    cyclingConnect,
+    cyclingDisconnect,
+    runningConnect,
+    runningDisconnect,
   };
 }
